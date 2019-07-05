@@ -110,7 +110,48 @@ dig active.vault.service.consul A
 
 # appendix: configure host to search consul domain host
 
-## CentOS7
+## Ubuntu DNS client setup
+ref: https://www.hiroom2.com/2018/05/29/ubuntu-1804-network-en/
+
+### baseline the existing config
+- at a minimum, need to add _consul_ to the search domain
+
+`cat /etc/resolve.conf`
+
+- backup original netplan file
+
+`sudo cp /etc/netplan/50-cloud-init.yaml /etc/netplan/50-cloud-init.yaml.orig`
+
+- edit the netplan file if needed to point to the DNS server with the consul-forward zone configured
+
+`sudo nano /etc/netplan/50-cloud-init.yaml`
+
+```
+network:
+    ethernets:
+        ens160:
+            addresses: []
+            dhcp4: true
+            nameservers:
+                addresses:
+                - 192.168.1.248
+                search:
+                - consul
+                - home.org
+    version: 2
+
+    ```
+
+- use netplan try to validate modified file
+	- assuming no errors, hit _ENTER_ to accept changes
+
+`sudo netplan try`
+
+- use netplan apply to apply changes
+
+`sudo netplan apply`
+
+## CentOS7 DNS client setup
 
 `sudo nano /etc/sysconfig/network-scripts/ifcfg-ens192`
 

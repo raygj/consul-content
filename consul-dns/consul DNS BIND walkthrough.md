@@ -116,7 +116,7 @@ ref: https://www.hiroom2.com/2018/05/29/ubuntu-1804-network-en/
 ### baseline the existing config
 - at a minimum, need to add _consul_ to the search domain
 
-`cat /etc/resolve.conf`
+`systemd-resolve --status`
 
 - backup original netplan file
 
@@ -180,11 +180,23 @@ nameserver 192.168.1.248
 # Forwarding DNS Queries to Consul from Central Windows DNS
 
 1 Windows Server 2016 running DNS
+1 Windows or Linux host running BIND, configured with _fowarder zone_
 1 Windows or Linux hosts configured to use Windows DNS server
 
+## ref
+- there is no Windows-friendly approach or at least it is not documented
+https://github.com/hashicorp/consul/issues/3964
+
 ## Windows DNS Server setup
-
-
+### issues
+- Windows Server 2016 DNS has _conditional forwarder_ concept
+	- first attempt at using this was a fail because the forwarder record does not support specifying a port (i.e., <consul IP>:8600)
+	- second attempt, making the use of BIND as a requirement
+		- configured Windows DNS conditional forwarder to forward _*consul_ domain to BIND server with forwarding zone already configured
+		- adds a requirement for the BIND server, but that is the support pattern
+	- third attempt, install Consul agent on Windows server and setup conditional forwarder to point to the local Consul agent
+		- requires Consul agent to listen on port 53
+		- requires use of another NIC since 53 is bound to primary LAN NIC of Windows server
 
 # appendix: tcpdump and wireshark to debug
 
@@ -234,3 +246,7 @@ PING active.vault.service.consul.home.org (127.0.0.1) 56(84) bytes of data.
 - can install on Mac with homebrew
 `brew install wireshark`
 `brew cask install wireshark`
+
+# next steps
+## DNS caching and production-izing Consul DNS
+https://learn.hashicorp.com/consul/security-networking/dns-caching

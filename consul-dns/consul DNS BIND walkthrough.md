@@ -13,9 +13,9 @@
 
 # Step 1
 
-## prepare BIND server
+## Prepare BIND server
 
-### disable dnssec
+### Disable dnssec
 [ref](https://github.com/hashicorp/consul/issues/423)
 
 `sudo nano /etc/bind/named.conf.options`
@@ -25,7 +25,7 @@
         dnssec-validation no;
 ```
 
-## add consul zone file statement
+## Add consul zone file statement
 
 `sudo nano /etc/bind/named.conf.local`
 
@@ -39,15 +39,15 @@ zone "consul" IN {
 };
 ```
 
-### verify config and zone files are error-free
+### Verify config and zone files are error-free
 
 `named-checkconf`
 
-## restart BIND
+## Restart BIND
 
 `sudo service bind9 restart`
 
-## test
+## Test
 - using dig from BIND server or remote host
 ` dig active.vault.service.consul`
 
@@ -55,7 +55,7 @@ zone "consul" IN {
 
 `ping active.vault.service.consul`
 
-## troubleshooting
+## Troubleshooting
 - make sure firewall is open for 8600 inbound on Consul cluster nodes
 
 - from another terminal session, starta tcpdump
@@ -83,7 +83,7 @@ IP 192.168.1.231.8600 > 192.168.1.248.43077: UDP, length 93
 
 `dig @192.168.1.231 -p 8600 active.vault.service.consul. A`
 
-## view BIND cache
+## View BIND cache
 - on BIND server
 
 `sudo rndc dumpdb -cache`
@@ -106,19 +106,64 @@ active.vault.service.consul.home.org. 1453 A 127.0.0.1
 
 `sudo service bind9 restart`
 
-dig active.vault.service.consul A
+- test
 
-# appendix: configure host to search consul domain host
+`dig active.vault.service.consul A`
+
+# Step 2
+- looking for a way to support resolution of Consul DNS to Windows hosts
+- should be as straight-forward as possible (KISS)
+
+## Overview
+
+1 Windows Server 2016 running DNS
+1 Windows or Linux host running BIND, configured with _fowarder zone_
+1 Windows or Linux hosts configured to use Windows DNS server
+
+ref: there is no Windows-friendly approach or at least it is not [documented](https://github.com/hashicorp/consul/issues/3964)
+
+### Notes
+- Windows Server 2016 DNS has _conditional forwarder_ concept
+	- first attempt at using this was a fail because the forwarder record does not support specifying a port (i.e., <consul IP>:8600)
+	- second attempt is a working model, but requires the use of the BIND server setup in Step 1
+		- configured Windows DNS conditional forwarder to forward _*consul_ domain to BIND server with forwarding zone already configured
+		- adds a requirement for the BIND server, but that is the HashiCorp supported pattern
+	- third attempt, install Consul agent on Windows server and setup conditional forwarder to point to the local Consul agent
+		- requires Consul agent to listen on port 53
+		- requires use of another NIC since 53 is bound to primary LAN NIC of Windows server
+
+## Windows DNS Server setup
+
+### Open DNS Manager on authorized DNS server
+
+1 right-click on _Conditional Forwarders_
+1 select _New Conditional Forwarder_
+1 enter DNS Domain _consul_
+1 enter IP address of BIND server
+1 select OK
+
+- that's it! you can now test
+
+### Test
+
+- from command prompt or powershell terminal:
+
+`ping active.vault.service.consul`
+
+- it may take a split second the first time to cache the DNS record, but the name should resolve and successfully ping (if ping is allowed)
+- alternatively you can open a browser window and hit `http://active.vault.service.consul:8200` for the Vault UI
+
+# Appendix: configure host without Consul agent to resolve hosts/services on Consul domain
 
 ## Ubuntu DNS client setup
 [ref](https://www.hiroom2.com/2018/05/29/ubuntu-1804-network-en/)
 
-### baseline the existing config
+### Baseline the existing config
 - at a minimum, need to add _consul_ to the search domain
 
 `systemd-resolve --status`
 
-- backup original netplan file
+- backup original netplan file **this is a YAML file and you will get frustrated by a stray space, create a backup file**
 
 `sudo cp /etc/netplan/50-cloud-init.yaml /etc/netplan/50-cloud-init.yaml.orig`
 
@@ -178,57 +223,14 @@ nameserver 192.168.1.248
 
 `dig active.vault.service.consul A`
 
-# Step 2
-- looking for a way to support resolution of Consul DNS to Windows hosts
-- should be as straight-forward as possible (KISS)
-
-## overview
-
-1 Windows Server 2016 running DNS
-1 Windows or Linux host running BIND, configured with _fowarder zone_
-1 Windows or Linux hosts configured to use Windows DNS server
-
-ref: there is no Windows-friendly approach or at least it is not [documented](https://github.com/hashicorp/consul/issues/3964)
-
-### Notes
-- Windows Server 2016 DNS has _conditional forwarder_ concept
-	- first attempt at using this was a fail because the forwarder record does not support specifying a port (i.e., <consul IP>:8600)
-	- second attempt is a working model, but requires the use of the BIND server setup in Step 1
-		- configured Windows DNS conditional forwarder to forward _*consul_ domain to BIND server with forwarding zone already configured
-		- adds a requirement for the BIND server, but that is the HashiCorp supported pattern
-	- third attempt, install Consul agent on Windows server and setup conditional forwarder to point to the local Consul agent
-		- requires Consul agent to listen on port 53
-		- requires use of another NIC since 53 is bound to primary LAN NIC of Windows server
-
-## Windows DNS Server setup
-
-### Open DNS Manager on authorized DNS server
-
-1 right-click on _Conditional Forwarders_
-1 select _New Conditional Forwarder_
-1 enter DNS Domain _consul_
-1 enter IP address of BIND server
-1 select OK
-
-- that's it! you can now test
-
-### test
-
-- from command prompt or powershell terminal:
-
-`ping active.vault.service.consul`
-
-- it may take a split second the first time to cache the DNS record, but the name should resolve and successfully ping (if ping is allowed)
-- alternatively you can open a browser window and hit `http://active.vault.service.consul:8200` for the Vault UI
-
-# appendix: using tcpdump and wireshark to debug
+# Appendix: using tcpdump and wireshark to debug
 
 1 prepare two tcpdump snippets to capture dig and ping tests separately
 1 prepare to run a dig test and ping test from host setup to use central DNS server
 1 capture each test separately from DNS server
 1 scp capture files back to laptop to analyze in Wireshark
 
-### setup tcpdump to write to two separate files, first for dig, then ping test
+### Setup tcpdump to write to two separate files, first for dig, then ping test
 - dig test
 
 `sudo tcpdump -nt -i ens160 -w lab00-dig-test udp port 8600`
@@ -241,7 +243,7 @@ ref: there is no Windows-friendly approach or at least it is not [documented](ht
 
 `scp lab00-dig-test jray@192.168.1.4:/Users/jray/Downloads`
 
-### failing dig test
+### Failing dig test
 
 ```
 [jray@consul-lab00 ~]$ dig @192.168.1.248  active.vault.service.consul. ANY
@@ -259,7 +261,7 @@ ref: there is no Windows-friendly approach or at least it is not [documented](ht
 ;active.vault.service.consul.	IN	ANY
   ```
 
-### failing ping test
+### Failing ping test
 - oddness when your query resolves to localhost - this usually means the forwarder and/or search domain is not configured (or has a typo)
 
 ```
@@ -268,13 +270,13 @@ PING active.vault.service.consul.home.org (127.0.0.1) 56(84) bytes of data.
 64 bytes from localhost (127.0.0.1): icmp_seq=1 ttl=64 time=0.028 ms
 ```
 
-## open in wireshark
+## Open in wireshark
 - can install on Mac with homebrew
 
 `brew install wireshark`
 
 `brew cask install wireshark`
 
-# next steps
+# Next steps
 ## DNS caching and production-izing Consul DNS
 [ref](https://learn.hashicorp.com/consul/security-networking/dns-caching)

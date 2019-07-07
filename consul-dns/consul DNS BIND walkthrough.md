@@ -141,7 +141,7 @@ network:
                 - home.org
     version: 2
 
-    ```
+```
 
 - use netplan try to validate modified file
 	- assuming no errors, hit _ENTER_ to accept changes

@@ -1,5 +1,5 @@
 # Resolving Consul DNS queries via BIND and Windows DNS
-- Step 1
+## Step 1
 
 * BIND running on Ubuntu 18.04
 * BIND forwarder zone configured to point *consul to Consul cluster on port 8600
@@ -7,7 +7,7 @@
 
 [ref](https://learn.hashicorp.com/consul/security-networking/forwarding)
 
-- Step 2
+## Step 2
 
 * Windows Server 2016 DNS
 * Windows DNS conditional forwarder configured to point *consul to BIND server

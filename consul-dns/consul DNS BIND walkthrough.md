@@ -1,15 +1,17 @@
 # Resolving Consul DNS queries via BIND and Windows DNS
 - Step 1
-1 BIND running on Ubuntu 18.04
-1 BIND forwarder zone configured to point *consul to Consul cluster on port 8600
-1 Host without Consul agent querying for *consul "A" record
+
+* BIND running on Ubuntu 18.04
+* BIND forwarder zone configured to point *consul to Consul cluster on port 8600
+* Host without Consul agent querying for *consul "A" record
 
 [ref](https://learn.hashicorp.com/consul/security-networking/forwarding)
 
 - Step 2
-1 Windows Server 2016 DNS
-1 Windows DNS conditional forwarder configured to point *consul to BIND server
-1 Host without Consul agent querying for *consul "A" record
+
+* Windows Server 2016 DNS
+* Windows DNS conditional forwarder configured to point *consul to BIND server
+* Host without Consul agent querying for *consul "A" record
 
 # Step 1
 
@@ -117,9 +119,9 @@ active.vault.service.consul.home.org. 1453 A 127.0.0.1
 
 ## Overview
 
-1 Windows Server 2016 running DNS
-1 Windows or Linux host running BIND, configured with _fowarder zone_
-1 Windows or Linux hosts configured to use Windows DNS server
+* Windows Server 2016 running DNS
+* Windows or Linux host running BIND, configured with _fowarder zone_
+* Windows or Linux hosts configured to use Windows DNS server
 
 ref: there is no Windows-friendly approach or at least it is not [documented](https://github.com/hashicorp/consul/issues/3964)
 
@@ -138,10 +140,10 @@ ref: there is no Windows-friendly approach or at least it is not [documented](ht
 ### Open DNS Manager on authorized DNS server
 
 1 right-click on _Conditional Forwarders_
-1 select _New Conditional Forwarder_
-1 enter DNS Domain _consul_
-1 enter IP address of BIND server
-1 select OK
+2 select _New Conditional Forwarder_
+3 enter DNS Domain _consul_
+4 enter IP address of BIND server
+5 select OK
 
 - that's it! you can now test
 
@@ -227,9 +229,9 @@ nameserver 192.168.1.248
 # Appendix: using tcpdump and wireshark to debug
 
 1 prepare two tcpdump snippets to capture dig and ping tests separately
-1 prepare to run a dig test and ping test from host setup to use central DNS server
-1 capture each test separately from DNS server
-1 scp capture files back to laptop to analyze in Wireshark
+2 prepare to run a dig test and ping test from host setup to use central DNS server
+3 capture each test separately from DNS server
+4 scp capture files back to laptop to analyze in Wireshark
 
 ### Setup tcpdump to write to two separate files, first for dig, then ping test
 - dig test

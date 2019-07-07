@@ -4,7 +4,7 @@
 1 BIND forwarder zone configured to point *consul to Consul cluster on port 8600
 1 Host without Consul agent querying for *consul "A" record
 
-[ref] (https://learn.hashicorp.com/consul/security-networking/forwarding)
+[ref](https://learn.hashicorp.com/consul/security-networking/forwarding)
 
 - Step 2
 1 Windows Server 2016 DNS
@@ -16,7 +16,7 @@
 ## prepare BIND server
 
 ### disable dnssec
-ref: https://github.com/hashicorp/consul/issues/423
+[ref](https://github.com/hashicorp/consul/issues/423)
 
 `sudo nano /etc/bind/named.conf.options`
 
@@ -111,7 +111,7 @@ dig active.vault.service.consul A
 # appendix: configure host to search consul domain host
 
 ## Ubuntu DNS client setup
-[ref] (https://www.hiroom2.com/2018/05/29/ubuntu-1804-network-en/)
+[ref](https://www.hiroom2.com/2018/05/29/ubuntu-1804-network-en/)
 
 ### baseline the existing config
 - at a minimum, need to add _consul_ to the search domain
@@ -185,8 +185,7 @@ nameserver 192.168.1.248
 1 Windows or Linux host running BIND, configured with _fowarder zone_
 1 Windows or Linux hosts configured to use Windows DNS server
 
-- ref
-	- there is no Windows-friendly approach or at least it is not [documented] (https://github.com/hashicorp/consul/issues/3964)
+- ref: there is no Windows-friendly approach or at least it is not [documented](https://github.com/hashicorp/consul/issues/3964)
 
 ## Windows DNS Server setup
 ### issues
@@ -250,4 +249,4 @@ PING active.vault.service.consul.home.org (127.0.0.1) 56(84) bytes of data.
 
 # next steps
 ## DNS caching and production-izing Consul DNS
-https://learn.hashicorp.com/consul/security-networking/dns-caching
+[ref](https://learn.hashicorp.com/consul/security-networking/dns-caching)

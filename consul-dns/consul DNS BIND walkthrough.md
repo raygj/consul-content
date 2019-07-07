@@ -58,7 +58,7 @@ zone "consul" IN {
 ## Troubleshooting
 - make sure firewall is open for 8600 inbound on Consul cluster nodes
 
-- from another terminal session, starta tcpdump
+- from another terminal session, start a tcpdump session
 
 `sudo tcpdump -nt -i ens160 udp port 8600`
 

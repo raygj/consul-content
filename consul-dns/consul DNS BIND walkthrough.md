@@ -1,17 +1,17 @@
-# Forwarding DNS Queries to Consul from Central BIND DNS
-- Approach 1:
+# Resolving Consul DNS queries via BIND and Windows DNS
+- Step 1
 1 BIND running on Ubuntu 18.04
-1 Consul agent running on BIND server joined to existing Consul cluster
-1 CentOS7 host without Consul agent querying for *consul "A" record
+1 BIND forwarder zone configured to point *consul to Consul cluster on port 8600
+1 Host without Consul agent querying for *consul "A" record
 
-ref: https://learn.hashicorp.com/consul/security-networking/forwarding
+[ref] (https://learn.hashicorp.com/consul/security-networking/forwarding)
 
-- Approach 2:
+- Step 2
 1 Windows Server 2016 DNS
-1 Consul agent running on Windows DNS Server
-1 CentOS7 host without Consul agent querying for *consul "A" record
+1 Windows DNS conditional forwarder configured to point *consul to BIND server
+1 Host without Consul agent querying for *consul "A" record
 
-# approach 1
+# Step 1
 
 ## prepare BIND server
 
@@ -111,7 +111,7 @@ dig active.vault.service.consul A
 # appendix: configure host to search consul domain host
 
 ## Ubuntu DNS client setup
-ref: https://www.hiroom2.com/2018/05/29/ubuntu-1804-network-en/
+[ref] (https://www.hiroom2.com/2018/05/29/ubuntu-1804-network-en/)
 
 ### baseline the existing config
 - at a minimum, need to add _consul_ to the search domain
@@ -122,7 +122,8 @@ ref: https://www.hiroom2.com/2018/05/29/ubuntu-1804-network-en/
 
 `sudo cp /etc/netplan/50-cloud-init.yaml /etc/netplan/50-cloud-init.yaml.orig`
 
-- edit the netplan file if needed to point to the DNS server with the consul-forward zone configured
+- edit the netplan file if needed to point to a the BIND or Windows DNS server
+- edit the search domain to include _consul_
 
 `sudo nano /etc/netplan/50-cloud-init.yaml`
 
@@ -177,15 +178,15 @@ nameserver 192.168.1.248
 
 `dig active.vault.service.consul A`
 
-# Forwarding DNS Queries to Consul from Central Windows DNS
+# Step 2
+- overview
 
 1 Windows Server 2016 running DNS
 1 Windows or Linux host running BIND, configured with _fowarder zone_
 1 Windows or Linux hosts configured to use Windows DNS server
 
-## ref
-- there is no Windows-friendly approach or at least it is not documented
-https://github.com/hashicorp/consul/issues/3964
+- ref
+	- there is no Windows-friendly approach or at least it is not [documented] (https://github.com/hashicorp/consul/issues/3964)
 
 ## Windows DNS Server setup
 ### issues
@@ -193,12 +194,12 @@ https://github.com/hashicorp/consul/issues/3964
 	- first attempt at using this was a fail because the forwarder record does not support specifying a port (i.e., <consul IP>:8600)
 	- second attempt, making the use of BIND as a requirement
 		- configured Windows DNS conditional forwarder to forward _*consul_ domain to BIND server with forwarding zone already configured
-		- adds a requirement for the BIND server, but that is the support pattern
+		- adds a requirement for the BIND server, but that is the HashiCorp supported pattern
 	- third attempt, install Consul agent on Windows server and setup conditional forwarder to point to the local Consul agent
 		- requires Consul agent to listen on port 53
 		- requires use of another NIC since 53 is bound to primary LAN NIC of Windows server
 
-# appendix: tcpdump and wireshark to debug
+# appendix: using tcpdump and wireshark to debug
 
 1 prepare two tcpdump snippets to capture dig and ping tests separately
 1 prepare to run a dig test and ping test from host setup to use central DNS server

@@ -244,7 +244,9 @@ PING active.vault.service.consul.home.org (127.0.0.1) 56(84) bytes of data.
 
 ## open in wireshark
 - can install on Mac with homebrew
+
 `brew install wireshark`
+
 `brew cask install wireshark`
 
 # next steps

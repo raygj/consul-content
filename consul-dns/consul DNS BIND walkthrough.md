@@ -49,6 +49,7 @@ zone "consul" IN {
 
 ## Test
 - using dig from BIND server or remote host
+
 ` dig active.vault.service.consul`
 
 - ping from CLI of host setup to use BIND server

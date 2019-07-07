@@ -41,7 +41,7 @@ zone "consul" IN {
 };
 ```
 
-### Verify config and zone files are error-free
+### Verify config file is error-free before attempting a service restart
 
 `named-checkconf`
 

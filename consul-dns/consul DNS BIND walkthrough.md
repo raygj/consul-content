@@ -66,7 +66,7 @@ zone "consul" IN {
 
 `ping active.vault.service.consul`
 
-	- you should see outbound transaction to the consul cluster or to the consul agent on localhost 8600
+- you should see outbound transaction to the consul cluster or to the consul agent on localhost 8600
 	
 ```
 jray@ns1:~$ sudo tcpdump -nt -i ens160 udp port 8600
@@ -76,8 +76,8 @@ IP 192.168.1.248.43077 > 192.168.1.231.8600: UDP, length 55
 IP 192.168.1.248.41740 > 192.168.1.231.8600: UDP, length 55
 IP 192.168.1.231.8600 > 192.168.1.248.43077: UDP, length 93
 ```
-	- Consul cluster is .231
-	- BIND server is .248
+- Consul cluster is .231
+- BIND server is .248
 
 - make sure 8600 is open outbound from the server
 

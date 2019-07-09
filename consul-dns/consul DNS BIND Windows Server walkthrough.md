@@ -204,7 +204,7 @@ network:
 
 `sudo nano /etc/sysconfig/network-scripts/ifcfg-ens192`
 
-*NOTE* file name is ifcfg-<your adapter name>
+*NOTE* file name is ifcfg-_your adapter name_
 
 - add:
 

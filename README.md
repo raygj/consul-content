@@ -7,4 +7,4 @@
 	
 ## Lab Environment
 
-![consul lab](https://raw.githubusercontent.com/raygj/consul-content/master/consul-dns/images/consul_lab.png?token=AFJFWDZT4XDPXG7B7U4IYVK5EYTI2)
+![consul lab](/images/consul_lab.png)

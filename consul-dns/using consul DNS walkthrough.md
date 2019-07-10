@@ -105,10 +105,12 @@ firewall-cmd --zone=public --add-service=http --permanent
 - verify join on consul cluster
 `curl http://192.168.1.xxx:8500/v1/agent/members?segment=_all | jq`
 
-- validate consul DNS from client
+- validate consul DNS from client using dig (this proves consul is functional, not OS resolver is configured properly)
 `dig @192.168.1.xxx -p 8600 active.vault.service.consul. A`
 
 ### Resolving Consul DNS from host
+
+_goal is to get native OS resolution of *consul reocords_
 
 - there are several options there:
 
@@ -122,6 +124,12 @@ firewall-cmd --zone=public --add-service=http --permanent
 #### Option 3: dnsmasq utility
 
 **Ubuntu Steps**
+
+- make sure resolv.conf
+	- only contains 127.0.0.1 and no external DNS server
+	- contains search domain _consul_ in addition to any other relevant local domains
+
+- modify resolv.conf manually for testing only, for permanent change use _netplan_
 
 - install dnsmasq
 
@@ -167,8 +175,36 @@ rev-server=192.168.0.0/16,192.168.1.xxx#8600 # this is the address of the host r
 
 **CentOS Steps**
 
-- make sure resolv.conf only contains 127.0.0.1 and no external DNS server
-- modify resolv.conf manually for testing only, for permanent change use _netplan_ for Ubuntu or 
+#### configure primary LAN connection to not use DHCP-provided DNS server and to search the _*consul_ domain
+
+- backup, then modify network-script
+
+```
+
+sudo cp /etc/sysconfig/network-scripts/ifcfg-ens192 /etc/sysconfig/network-scripts/ifcfg-ens192.backup
+
+sudo nano /etc/sysconfig/network-scripts/ifcfg-ens192
+
+```
+
+- modify/add to ifcfg-ens*** where "*** = your adapter number"
+
+```
+
+PEERDNS=NO
+DOMAIN=consul
+
+```
+
+- save and exit
+
+- restart network service
+
+`sudo systemctl restart network`
+
+##### install and configure dnsmasq utility that will handle all name resolution for OS
+
+_this configuration will push *consul queries to the local Consul agent on port 8600 and all other queries to another DNS server on port 53_
 
 - install dnsmasq
 

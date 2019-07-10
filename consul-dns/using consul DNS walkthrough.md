@@ -1,6 +1,18 @@
-## Use Consul DNS to Find Active Vault Node
+## Use Consul DNS from a Host to resolve Consul names
 [learn.hashicorp](https://learn.hashicorp.com/consul/security-networking/forwarding)
 [consul dns info](https://www.consul.io/docs/agent/dns.html)
+
+- Assumptions:
+
+1. Consul cluster running on local LAN
+2. It is not a requirement to have a single centralized DNS server that can resolve Consul and non-Consul names. If that scenario is desired, see [Consul BIND Windows Walkthrough](https://github.com/raygj/consul-content/blob/master/consul-dns/consul%20DNS%20BIND%20Windows%20Server%20walkthrough.md)
+3. CentOS or Ubuntu host available to run Consul agent and connect to Consul cluster
+
+- Overview
+
+1. Install and configure Consul in agent-mode
+2. Install and configure dnsmasq
+3. Resolve Consul DNS from host
 
 ### Install and Configure Consul
 
@@ -15,7 +27,6 @@ unzip consul_1.5.1_linux_amd64.zip
 - add consul to path
 
 ```
-# consul
 
 echo 'export PATH=$PATH:~/consul' >> ~/.profile
 
@@ -24,17 +35,20 @@ source ~/.profile \\ centos, need verify ubuntu
 consul -autocomplete-install
 
 complete -C /usr/local/bin/consul consul
+
 ```
 
 - setup data and log dirs
 
 ```
+
 mkdir ~/consul/data
 
 mkdir ~/consul/log/
 
 touch ~/consul/log/output.log
-  ```
+
+```
 
 ### Setup Firewall
 
@@ -98,20 +112,22 @@ firewall-cmd --zone=public --add-service=http --permanent
 
 - there are several options there:
 
-1 BIND server setup to forward _consul_ domain queries to Consul cluster
-2 Windows server setup as primary DNS server, using _conditional forwarder_ to push _consul_ domain queries to BIND
-3 Host running Consul agent with configuration to forward Consul DNS queries to Consul agent on port 8600 [use learn.hashicorp guide](https://learn.hashicorp.com/consul/security-networking/forwarding)
+1. BIND server setup to forward _consul_ domain queries to Consul cluster
+2. Windows server setup as primary DNS server, using _conditional forwarder_ to push _consul_ domain queries to BIND
+3. Host running Consul agent with configuration to forward Consul DNS queries to Consul agent on port 8600 [use learn.hashicorp guide](https://learn.hashicorp.com/consul/security-networking/forwarding)
 
 - options 1 and 2 are covered in a separate [guide](https://github.com/raygj/consul-content/blob/master/consul-dns/consul%20DNS%20BIND%20walkthrough.md)
 - option 3 is covered in the next section for CentOS7, Ubuntu 18.04, Windows Server 2016
 
-#### Option 3: dnsmasq utility **Ubuntu**
+#### Option 3: dnsmasq utility
+
+**Ubuntu Steps**
 
 - install dnsmasq
 
 `sudo apt install dnsmasq -y`
 
-- create dnsmasq config // need to verify if default config is provided or not ?!?
+- create dnsmasq config
 
 `sudo nano /etc/dnsmasq.d/10-consul`
 
@@ -119,19 +135,26 @@ firewall-cmd --zone=public --add-service=http --permanent
 
 ```
 
-server=/consul/127.0.0.1#8600
+server=/consul/192.168.1.xxx#8600 # this is the address of the host running dnsmasq
+server=192.168.1.yyy # this is your local, default DNS server for non-Consul domains
+
+no-resolv
+log-queries
 
 # Uncomment and modify as appropriate to enable reverse DNS lookups for
 # common netblocks found in RFC 1918, 5735, and 6598:
+
+rev-server=192.168.0.0/16,192.168.1.xxx#8600 # this is the address of the host running dnsmasq
+
 #rev-server=0.0.0.0/8,127.0.0.1#8600
 #rev-server=10.0.0.0/8,127.0.0.1#8600
 #rev-server=100.64.0.0/10,127.0.0.1#8600
 #rev-server=127.0.0.1/8,127.0.0.1#8600
 #rev-server=169.254.0.0/16,127.0.0.1#8600
 #rev-server=172.16.0.0/12,127.0.0.1#8600
-rev-server=192.168.0.0/16,127.0.0.1#8600
 #rev-server=224.0.0.0/4,127.0.0.1#8600
 #rev-server=240.0.0.0/4,127.0.0.1#8600
+
 ```
 
 - save and exit file, then restart dnsmasq process
@@ -142,7 +165,10 @@ rev-server=192.168.0.0/16,127.0.0.1#8600
 
 `ping active.vault.service.consul`
 
-#### Option 3: dnsmasq utility **CentOS7**
+**CentOS Steps**
+
+- make sure resolv.conf only contains 127.0.0.1 and no external DNS server
+- modify resolv.conf manually for testing only, for permanent change use _netplan_ for Ubuntu or 
 
 - install dnsmasq
 
@@ -168,7 +194,9 @@ log-queries
 
 # Uncomment and modify as appropriate to enable reverse DNS lookups for
 # common netblocks found in RFC 1918, 5735, and 6598:
-rev-server=192.168.0.0/16,192.168.1.193#8600
+
+rev-server=192.168.0.0/16,192.168.1.xxx#8600
+
 #rev-server=0.0.0.0/8,127.0.0.1#8600
 #rev-server=10.0.0.0/8,127.0.0.1#8600
 #rev-server=100.64.0.0/10,127.0.0.1#8600
@@ -219,3 +247,15 @@ Jul 09 14:12:51 consul-lab01 dnsmasq[9069]: read /etc/hosts - 2 addresses
 
 `sudo tcpdump -nt -i <int name> udp port 53`
 `sudo tcpdump -nt -i <int name> udp port 8600'
+
+
+### Gracefully close Consul agent
+_results in Consul agent being listed with a "left" status in the Consul cluster and will age out altogether after 72 hours_
+
+- collect consul PID
+
+`ps -ef | grep consul`
+
+- issue kill command using PID
+
+`sudo kill -INT <consul PID>`

@@ -278,10 +278,13 @@ Jul 09 14:12:51 consul-lab01 dnsmasq[9069]: read /etc/hosts - 2 addresses
 
 `ping active.vault.service.consul`
 
+`ping www.espn.com`
+
 ### troubleshooting DNS
-- use tcpdmp to monitor queries to 53 and 8600 // determine int name by using `ip addr` command
+- use tcpdmp to monitor queries to 53 and 8600 *note* determine <int name> by using `ip addr` command
 
 `sudo tcpdump -nt -i <int name> udp port 53`
+
 `sudo tcpdump -nt -i <int name> udp port 8600'
 
 

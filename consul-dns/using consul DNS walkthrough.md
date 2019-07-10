@@ -110,7 +110,7 @@ firewall-cmd --zone=public --add-service=http --permanent
 
 ### Resolving Consul DNS from host
 
-_goal is to get native OS resolution of *consul records
+_goal is to get native OS resolution of *consul records_
 
 - there are several options there:
 
@@ -134,7 +134,6 @@ _goal is to get native OS resolution of *consul records
 - stop and disable systemd-resolved
 
 ```
-
 sudo systemctl disable systemd-resolved
 
 sudo systemctl stop systemd-resolved
@@ -144,7 +143,6 @@ sudo systemctl stop systemd-resolved
 - remove symlinked `resolve.conf` file
 
 ```
-
 ls -lh /etc/resolv.conf
 
 sudo rm /etc/resolv.conf
@@ -157,12 +155,7 @@ sudo rm /etc/resolv.conf
 
 - enter minimum configuration
 
-nameserver 127.0.0.1
-
-- save and exit
-
-
-```
+`nameserver 127.0.0.1`
 
 - save and exit file, then restart network service
 
@@ -179,7 +172,6 @@ nameserver 127.0.0.1
 - drop the following into the file; this identifies the consul agent DNS listener on port 8600 and applicable CIDRs for reverse DNS
 
 ```
-
 server=/consul/192.168.1.xxx#8600 # this is the address of the host running dnsmasq
 server=192.168.1.yyy # this is your local, default DNS server for non-Consul domains
 
@@ -218,7 +210,6 @@ rev-server=192.168.0.0/16,192.168.1.xxx#8600 # this is the address of the host r
 - ifcfg-ens*** where "*** = your adapter number"
 
 ```
-
 sudo cp /etc/sysconfig/network-scripts/ifcfg-ens192 /etc/sysconfig/network-scripts/ifcfg-ens192.backup
 
 sudo nano /etc/sysconfig/network-scripts/ifcfg-ens192
@@ -228,7 +219,6 @@ sudo nano /etc/sysconfig/network-scripts/ifcfg-ens192
 - modify/add
 
 ```
-
 PEERDNS=NO
 DOMAIN=consul
 

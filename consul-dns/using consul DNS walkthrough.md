@@ -1,20 +1,22 @@
-## Use Consul DNS from a Host to resolve Consul names
+# Use Consul DNS from a Host to resolve Consul names
+### References:
 [learn.hashicorp](https://learn.hashicorp.com/consul/security-networking/forwarding)
+
 [consul dns info](https://www.consul.io/docs/agent/dns.html)
 
-- Assumptions:
+### Assumptions:
 
 1. Consul cluster running on local LAN
 2. It is not a requirement to have a single centralized DNS server that can resolve Consul and non-Consul names. If that scenario is desired, see [Consul BIND Windows Walkthrough](https://github.com/raygj/consul-content/blob/master/consul-dns/consul%20DNS%20BIND%20Windows%20Server%20walkthrough.md)
 3. CentOS or Ubuntu host available to run Consul agent and connect to Consul cluster
 
-- Overview
+### Overview
 
 1. Install and configure Consul in agent-mode
 2. Install and configure dnsmasq
 3. Resolve Consul DNS from host
 
-### Install and Configure Consul
+# Install and Configure Consul
 
 ```
 mkdir ~/consul; cd ~/consul
@@ -50,7 +52,7 @@ touch ~/consul/log/output.log
 
 ```
 
-### Setup Firewall
+## Setup Firewall
 
 `su root`
 
@@ -92,7 +94,7 @@ firewall-cmd --zone=public --add-service=http --permanent
 
 `firewall-cmd --complete-reload`
 
-### Start Consul
+## Start Consul
 
 - start consul agent as background process
 
@@ -108,7 +110,7 @@ firewall-cmd --zone=public --add-service=http --permanent
 - validate consul DNS from client using dig (this proves consul is functional, not OS resolver is configured properly)
 `dig @192.168.1.xxx -p 8600 active.vault.service.consul. A`
 
-### Resolving Consul DNS from host
+## Resolving Consul DNS from host
 
 _goal is to get native OS resolution of *consul records_
 
@@ -121,7 +123,7 @@ _goal is to get native OS resolution of *consul records_
 - options 1 and 2 are covered in a separate [guide](https://github.com/raygj/consul-content/blob/master/consul-dns/consul%20DNS%20BIND%20walkthrough.md)
 - option 3 is covered in the next section for CentOS7, Ubuntu 18.04, Windows Server 2016
 
-#### Option 3: dnsmasq utility
+### Option 3: dnsmasq utility
 
 **Ubuntu 18.04 Steps**
 

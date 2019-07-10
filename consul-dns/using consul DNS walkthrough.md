@@ -110,7 +110,7 @@ firewall-cmd --zone=public --add-service=http --permanent
 
 ### Resolving Consul DNS from host
 
-_goal is to get native OS resolution of *consul reocords_
+_goal is to get native OS resolution of *consul records
 
 - there are several options there:
 
@@ -123,13 +123,50 @@ _goal is to get native OS resolution of *consul reocords_
 
 #### Option 3: dnsmasq utility
 
-**Ubuntu Steps**
+**Ubuntu 18.04 Steps**
 
-- make sure resolv.conf
-	- only contains 127.0.0.1 and no external DNS server
-	- contains search domain _consul_ in addition to any other relevant local domains
+#### configure primary LAN connection to not use DHCP-provided DNS server and to search the _*consul_ domain
 
-- modify resolv.conf manually for testing only, for permanent change use _netplan_
+- baseline existing DNS status
+
+`sudo systemd-resolve --status`
+
+- stop and disable systemd-resolved
+
+```
+
+sudo systemctl disable systemd-resolved
+
+sudo systemctl stop systemd-resolved
+
+```
+
+- remove symlinked `resolve.conf` file
+
+```
+
+ls -lh /etc/resolv.conf
+
+sudo rm /etc/resolv.conf
+
+```
+
+- create new resolve.conf file
+
+`sudo nano /etc/resolv.conf`
+
+- enter minimum configuration
+
+nameserver 127.0.0.1
+
+- save and exit
+
+
+```
+
+- save and exit file, then restart network service
+
+`sudo netplan apply`
 
 - install dnsmasq
 
@@ -178,6 +215,7 @@ rev-server=192.168.0.0/16,192.168.1.xxx#8600 # this is the address of the host r
 #### configure primary LAN connection to not use DHCP-provided DNS server and to search the _*consul_ domain
 
 - backup, then modify network-script
+- ifcfg-ens*** where "*** = your adapter number"
 
 ```
 
@@ -187,7 +225,7 @@ sudo nano /etc/sysconfig/network-scripts/ifcfg-ens192
 
 ```
 
-- modify/add to ifcfg-ens*** where "*** = your adapter number"
+- modify/add
 
 ```
 

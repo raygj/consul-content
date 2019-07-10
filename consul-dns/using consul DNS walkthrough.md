@@ -328,3 +328,6 @@ _results in Consul agent being listed with a "left" status in the Consul cluster
 - issue kill command using PID
 
 `sudo kill -INT <consul PID>`
+
+# Appendix: Windows
+https://github.com/hashicorp/consul/issues/569

@@ -7,4 +7,4 @@
 	
 ## Lab Environment
 
-![consul lab](/images/consul_lab.png)
+![consul lab](/consul-dns/images/consul_lab.png)

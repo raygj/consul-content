@@ -120,7 +120,7 @@ _goal is to get native OS resolution of *consul records_
 2. Windows server setup as primary DNS server, using _conditional forwarder_ to push _consul_ domain queries to BIND
 3. Host running Consul agent with configuration to forward Consul DNS queries to Consul agent on port 8600 [use learn.hashicorp guide](https://learn.hashicorp.com/consul/security-networking/forwarding)
 
-- options 1 and 2 are covered in a separate [guide](https://github.com/raygj/consul-content/blob/master/consul-dns/consul%20DNS%20BIND%20walkthrough.md)
+- options 1 and 2 are covered in a separate [guide](https://github.com/raygj/consul-content/blob/master/consul-dns/consul%20DNS%20BIND%20Windows%20Server%20walkthrough.md)
 - option 3 is covered in the next section for CentOS7, Ubuntu 18.04, Windows Server 2016
 
 ### Option 3: dnsmasq utility

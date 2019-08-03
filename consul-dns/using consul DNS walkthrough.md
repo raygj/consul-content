@@ -1,8 +1,10 @@
 # Use Consul DNS from a Host to resolve Consul names
+
 ### References:
+
 [learn.hashicorp](https://learn.hashicorp.com/consul/security-networking/forwarding)
 
-[consul dns info](https://www.consul.io/docs/agent/dns.html)
+[Consul DNS Info](https://www.consul.io/docs/agent/dns.html)
 
 ### Assumptions:
 
@@ -311,6 +313,7 @@ Jul 09 14:12:51 consul-lab01 dnsmasq[9069]: read /etc/hosts - 2 addresses
 `ping www.espn.com`
 
 ### troubleshooting DNS
+
 - use tcpdmp to monitor queries to 53 and 8600 *note* determine <int name> by using `ip addr` command
 
 `sudo tcpdump -nt -i <int name> udp port 53`
@@ -319,6 +322,7 @@ Jul 09 14:12:51 consul-lab01 dnsmasq[9069]: read /etc/hosts - 2 addresses
 
 
 ### Gracefully close Consul agent
+
 _results in Consul agent being listed with a "left" status in the Consul cluster and will age out altogether after 72 hours_
 
 - collect consul PID
@@ -329,5 +333,12 @@ _results in Consul agent being listed with a "left" status in the Consul cluster
 
 `sudo kill -INT <consul PID>`
 
+### Known Issue for AWS-based Consul Agents
+
+_need additional research, but quick note on required recursion_
+
+` "recursors": ["169.254.169.253"]`
+
 # Appendix: Windows
 https://github.com/hashicorp/consul/issues/569
+

@@ -1,10 +1,21 @@
 # consul-content
-## consul-dns
-- walkthroughs of interacting with Consul DNS from enterprise DNS servers
+
+![diagram](/images/Consul_PrimaryLogo_FullColor.png)
+
+## cluster-bootstrap
+- BASH script to deploy 1 or 3 node Consul OSS or ENT cluster on a VM without Terraform
+	- bootstrap OS, firewall, configure services, etc
+	- Ubuntu 18 or CentOS 7
+
+## consul-aws-demo-instance
+- Terraform code to automatically deploy a Consul OSS cluster
+
+## consul-dns (discovery)
+- walkthrough's for interacting with Consul DNS from enterprise DNS servers
 	- BIND9
 	- Windows Server 2016
 	- Windows and Linux DNS clients
 	
-## Lab Environment
-
-![consul lab](/consul-dns/images/consul_lab.png)
+## kubernetes
+- consul-kubernetes deployment walkthrough (WIP)
+- consul-kubernetes and non-kubernetes connect (service mesh) walkthrough (WIP)imag

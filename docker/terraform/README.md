@@ -1,0 +1,2 @@
+- this Terraform code can be used update to reflect your target infrastructure
+- the templates dir contains a bootstrap script that can be modify based on the target OS and your preferences

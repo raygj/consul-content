@@ -16,11 +16,7 @@
 # systemctl start consul
 
 # install or upgrade required utilities
-yum install nano -y
-yum install unzip -y
-yum install open-vm-tools -y
-yum install net-tools -y
-yum install nmap -y
+yum install -y nano unzip open-vm-tools net-tools nmap
 
 CLUSTER_COUNT=$#
 CONSUL_VERSION="1.6.1"

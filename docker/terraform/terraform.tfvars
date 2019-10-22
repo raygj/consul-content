@@ -6,6 +6,6 @@ memsize="4096"
 
 disk_store="SSD"
 
-os="ubuntu"
+os="centos7"
 
 guest_pass=""

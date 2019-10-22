@@ -19,10 +19,10 @@ Terraform code with bootstrap script to prepare CentOS and install Consul servic
 1. Deploy CentOS host
 2. Bootstrap host
 3. Validate Consul and Docker operations
-4. Run Docker Consul client images
-5. Interact with Consul
-6. Walkthrough light maintenance activities
-7. Destroy
+4. Connect a Docker Consul client
+5. Connect a Docker Consul client and register a service
+6. Use Consul DNS for Discovery
+7. Docker and Consul Commands
 
 # Step 1: Deploy CentOS7 host
 
@@ -38,3 +38,128 @@ Terraform code with bootstrap script to prepare CentOS and install Consul servic
 # Step 3: Validate Consul and Docker operations
 
 - after bootstrap is complete, validate Consul and Docker
+
+`sudo systemctl status consul`
+
+`sudo systemctl status docker`
+
+- if needed, start the service(s) and check for errors, then issue these commands to validate services are operational:
+
+`consul members`
+
+`sudo docker ps`
+
+## Get Docker images
+
+`sudo docker pull consul`
+
+# Step 4: Run a Consul Client
+
+first, run in Docker attached mode:
+
+```
+
+sudo docker run \
+   --name=fishstick \
+   consul agent -node=client-1 -join=192.168.1.195
+   
+```
+
+you should see messages such as "Joining cluster..." and "Consul agent running!"
+
+## validate client has joined the cluster
+
+open a new terminal session to the Consul host, and issue:
+
+`consul members`
+
+you should see the client that you started in the other terminal session _client-1_
+
+```
+
+[jray@sandbox-1 ~]$ consul members
+Node       Address             Status  Type    Build  Protocol  DC   Segment
+sandbox-1  192.168.1.195:8301  alive   server  1.6.1  2         dc1  <all>
+client-1   172.17.0.2:8301     alive   client  1.6.1  2         dc1  <default>
+
+```
+
+# Step 5: Run a Consul Client and Register a Service
+
+_open a third terminal session_
+
+use the HashiCorp demo "counting service" as a lightweight demo service:
+
+`sudo docker pull hashicorp/counting-service:0.0.2`
+
+start the counting service container:
+
+```
+
+sudo docker run \
+   -p 9001:9001 \
+   -d \
+   --name=weasel \
+   hashicorp/counting-service:0.0.2
+
+```
+
+create a service definition for the first container you started in Step 4:
+
+`sudo docker exec fishstick /bin/sh -c "echo '{\"service\": {\"name\": \"counting\", \"tags\": [\"go\"], \"port\": 9001}}' >> /consul/config/counting.json"`
+
+reload the container you started in Step 4 to read the new Consul configuration file you just wrote:
+
+`sudo docker exec fox consul reload`
+
+## validate service was registered
+
+if you go back to the original terminal window, you will see a message such as "Reloading configuration..." "Synced service "counting"
+
+```
+
+    2019/10/22 21:14:49 [INFO] agent: Caught signal:  hangup
+    2019/10/22 21:14:49 [INFO] agent: Reloading configuration...
+    2019/10/22 21:14:49 [INFO] agent: Synced service "counting"
+
+```
+
+you can also verify this in the Consul UI, browse to `http://< your Consul host >:8500
+
+# Step 6: Consul DNS for Discovery
+
+perform a "discovery" test using the DNS utility **dig** to find the IP address of the counting service:
+
+`dig @127.0.0.1 -p 8600 counting.service.consul`
+
+this should return the IP address of the Docker container
+
+# Step 7: Docker and Consul Commands
+
+these sampel commands were pulled from the [HashiCorp Guide](https://learn.hashicorp.com/consul/day-0/containers-guide#consul-container-maintenance-operations), there are others in the guide that may be of interest
+
+- gather running containers and info such as container ID:
+
+`sudo docker ps`
+
+- execute commands in the container:
+
+`sudo docker exec <container_id> consul members`
+
+- issue commands inside of your container by opening an interactive shell and using the Consul binary included in the container:
+
+`sudo docker exec -it <container_id> /bin/sh`
+
+- stop a container:
+
+`sudo docker stop <container_id>`
+
+**note on cleanup**
+
+As long as there are enough servers in the datacenter to maintain quorum, Consul's autopilot feature will handle removing servers whose containers were stopped. Autopilot's default settings are already configured correctly.
+
+# Cleanup Environment
+
+- stop containers
+- stop consul service
+- terraform destroy environment

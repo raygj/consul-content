@@ -77,6 +77,7 @@ if [ $CLUSTER_COUNT -eq 1 ]; then
   cat << EOF > /etc/consul.d/consul.json
   {
   "server": true,
+  "bootstrap_expect": 1,
   "leave_on_terminate": true,
   "advertise_addr": "${MYIP}",
   "data_dir": "/opt/consul/data",

@@ -1,2 +1,5 @@
 - this Terraform code can be used update to reflect your target infrastructure
 - the templates dir contains a bootstrap script that can be modify based on the target OS and your preferences
+- the `consul-install` script is a bash script to create a 1 or 3-node demo cluster of Consul OSS (or enterprise)
+	- the number of IP addresses you provide as CLI arguments will indicate whether it is a 1 or 3-node cluster
+	- the script is run manually after the `bootstrap` script is executed by Terraform

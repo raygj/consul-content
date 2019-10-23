@@ -41,9 +41,15 @@ resource "null_resource" "provisioner" {
     destination = "/tmp/bootstrap.sh"
   }
 
+  provisioner "file" {
+    source      = "/Users/jray/hashi/terraform/esxi-sandbox/templates/consul-install.sh"
+    destination = "/tmp/consul-install.sh"
+  }
+
   provisioner "remote-exec" {
     inline = [
       "echo ${var.guest_pass} | sudo -S chmod +x /tmp/bootstrap.sh",
+      "chmod +x /tmp/consul-install.sh", // this script will be run manually after the initial bootstrap is complete
       "sudo /tmp/bootstrap.sh",
     ]
   }

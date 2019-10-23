@@ -110,7 +110,7 @@ create a service definition for the first container you started in Step 4:
 
 reload the container you started in Step 4 to read the new Consul configuration file you just wrote:
 
-`sudo docker exec fox consul reload`
+`sudo docker exec fishstick consul reload`
 
 ## validate service was registered
 
@@ -163,3 +163,39 @@ As long as there are enough servers in the datacenter to maintain quorum, Consul
 - stop containers
 - stop consul service
 - terraform destroy environment
+
+# Appendix: Multiple Containers, Single Consul Client
+
+## Create two instances of the same counting service
+
+- instance 1, badger:
+
+```
+
+sudo docker run \
+   -p 9002:9002 \
+   -d \
+   --name=badger \
+   hashicorp/counting-service:0.0.2
+
+```
+
+- modify the consul config, with the corresponding ports:
+
+sudo docker exec fishstick /bin/sh -c "echo '{\"service\": {\"name\": \"counting\", \"tags\": [\"go\"], \"port\": 9002}}' >> /consul/config/counting.json"
+
+- instance 2, bear:
+
+```
+
+sudo docker run \
+   -p 9003:9003 \
+   -d \
+   --name=bear \
+   hashicorp/counting-service:0.0.2
+
+```
+
+- modify the consul config, with the corresponding ports:
+   
+sudo docker exec fishstick /bin/sh -c "echo '{\"service\": {\"name\": \"counting\", \"tags\": [\"go\"], \"port\": 9003}}' >> /consul/config/counting.json"

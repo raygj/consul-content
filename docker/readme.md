@@ -67,6 +67,10 @@ sudo docker run \
 
 you should see messages such as "Joining cluster..." and "Consul agent running!"
 
+## validate counting service is up
+
+from CLI `curl http://localhost:9001` or from a web broswer
+
 ## validate client has joined the cluster
 
 open a new terminal session to the Consul host, and issue:
@@ -136,7 +140,7 @@ this should return the IP address of the Docker container
 
 # Step 7: Docker and Consul Commands
 
-these sampel commands were pulled from the [HashiCorp Guide](https://learn.hashicorp.com/consul/day-0/containers-guide#consul-container-maintenance-operations), there are others in the guide that may be of interest
+these sample commands were pulled from the [HashiCorp Guide](https://learn.hashicorp.com/consul/day-0/containers-guide#consul-container-maintenance-operations), there are others in the guide that may be of interest
 
 - gather running containers and info such as container ID:
 
@@ -165,6 +169,15 @@ As long as there are enough servers in the datacenter to maintain quorum, Consul
 - terraform destroy environment
 
 # Appendix: Multiple Containers, Single Consul Client
+
+we can take the basic setup from above and extrapolate it a bit into a common use case: single host running multiple instances of the same service. this introduces a new challenge of managing connectivity to instances as they are instantiated or stopped. also, we want clients to have a consistent (not necessarily human-friendly) port to access our service.
+
+so the pattern is to register each service uniquely with Consul as it is instantiated so Consul can register the instance, and provide it as a discovery response. at this point Consul could act as a load balancer and round-robin DNS responses to the two services...or we could add another layer in the form of a Nginx load balancer and then manage the configuration of Nginx via Consul Template. so as the lifecycle of services occurs, Nginx's configuration will reflect only healthy services.
+
+realistically, this scenario may push the limits of effectiveness of a "single VM and Docker" and would be better served to [schedule the containers via Nomad](https://www.nomadproject.io/docs/internals/scheduling/scheduling.html) and using [Consul Connect on Nomad](https://www.consul.io/docs/connect/platform/nomad.html).
+
+
+
 
 ## Create two instances of the same counting service
 

@@ -178,38 +178,64 @@ realistically, this scenario may push the limits of effectiveness of a "single V
 
 ![diagram](/docker/images/consul-docker-lab.png)
 
-
-
 ## Create two instances of the same counting service
 
-- instance 1, badger:
+### configure and start two instances
 
-```
+#### create directory structure
 
-sudo docker run \
-   -p 9002:9002 \
-   -d \
-   --name=badger \
-   hashicorp/counting-service:0.0.2
+`mkdir -p ~/docker/counting-inst-1/wdir ~/docker/counting-inst-2/wdir`
 
-```
+#### create a Dockerfile
 
-- modify the consul config, with the corresponding ports:
+[official](https://docs.docker.com/engine/reference/builder/#cmd)guide
 
-sudo docker exec fishstick /bin/sh -c "echo '{\"service\": {\"name\": \"counting\", \"tags\": [\"go\"], \"port\": 9002}}' >> /consul/config/counting.json"
+nano ~/docker/Dockerfile
 
-- instance 2, bear:
+FROM alpine:3.7
+CMD ["./counting-service"]
 
-```
+#### create docker-compose config
 
-sudo docker run \
-   -p 9003:9003 \
-   -d \
-   --name=bear \
-   hashicorp/counting-service:0.0.2
+this will define the instances
 
-```
+nano /home/jray/docker/docker-compose.yml
 
-- modify the consul config, with the corresponding ports:
-   
-`sudo docker exec fishstick /bin/sh -c "echo '{\"service\": {\"name\": \"counting\", \"tags\": [\"go\"], \"port\": 9003}}' >> /consul/config/counting.json"`
+version: '3'
+services:
+  inst-1-badger:
+   build: ./
+   ports:
+    - '9002:9002'
+   working_dir: /home/jray/docker/counting-service-1/wdir
+
+  inst-2-bear:
+   build: ./
+   ports:
+    - '9003:9003'
+   working_dir: /home/jray/docker/counting-service-2/wdir
+
+#### run
+
+`sudo `which docker-compose` up`
+
+
+
+
+## Docker Compose Bootstrap
+
+[install](https://docs.docker.com/compose/install/)guide
+
+- dependencies:
+
+`sudo yum install -y python-dev py-pip libffi-dev openssl-dev gcc libc-dev make`
+
+- Docker Compose
+
+`sudo curl -L "https://github.com/docker/compose/releases/download/1.24.1/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose`
+
+`sudo chmod +x /usr/local/bin/docker-compose`
+
+- test Docker Compose
+
+`sudo `which docker-compose` --version`

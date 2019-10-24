@@ -176,6 +176,7 @@ so the pattern is to register each service uniquely with Consul as it is instant
 
 realistically, this scenario may push the limits of effectiveness of a "single VM and Docker" and would be better served to [schedule the containers via Nomad](https://www.nomadproject.io/docs/internals/scheduling/scheduling.html) and using [Consul Connect on Nomad](https://www.consul.io/docs/connect/platform/nomad.html).
 
+![diagram](/docker/images/consul-docker-lab.png)
 
 
 

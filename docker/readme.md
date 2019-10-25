@@ -296,15 +296,21 @@ services:
 
 #### build
 
-`sudo `which docker-compose` build`
+```
+sudo `which docker-compose` build
+```
 
 #### run
 
-`sudo `which docker-compose` up`
+```
+sudo `which docker-compose` up
+```
 
 both containers should be up now, `docker_inst-1-badger` and `docker_inst-2-bear`
 
-`sudo `which docker-compose` ps`
+```
+sudo `which docker-compose` ps
+```
 
 try a curl to both, with optional trace in the event you need to debug:
 

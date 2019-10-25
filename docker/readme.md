@@ -336,4 +336,6 @@ Docker Compose and dependencies are installed within the `bootstrap.sh` script, 
 
 - test Docker Compose
 
-`sudo `which docker-compose` --version`
+```
+sudo `which docker-compose` --version
+```

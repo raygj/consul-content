@@ -182,24 +182,46 @@ realistically, this scenario may push the limits of effectiveness of a "single V
 
 ### configure and start two instances
 
-#### create directory structure
+#### create working dir on Docker host
 
-`mkdir -p ~/docker/counting-inst-1/wdir ~/docker/counting-inst-2/wdir`
+`mkdir ~/docker`
+
+#### prepare counting-service binary
+
+git clone repo, unzip/move `counting-service` binary that will be built into the container in the next steps
+
+```
+
+cd ~/docker
+
+git clone https://github.com/raygj/consul-content
+
+cp consul-content/docker/counting-service/counting-service ~/docker
+
+```
 
 #### create a Dockerfile
 
 [official](https://docs.docker.com/engine/reference/builder/#cmd)guide
 
+```
+
 nano ~/docker/Dockerfile
 
 FROM alpine:3.7
+WORKDIR /usr/src/app
+COPY counting-service .
 CMD ["./counting-service"]
+
+```
 
 #### create docker-compose config
 
-this will define the instances
+this will define the instances and expose each at on unique port
 
-nano /home/jray/docker/docker-compose.yml
+```
+
+nano ~/docker/docker-compose.yml
 
 version: '3'
 services:
@@ -207,19 +229,23 @@ services:
    build: ./
    ports:
     - '9002:9002'
-   working_dir: /home/jray/docker/counting-service-1/wdir
+   working_dir: /usr/src/app
 
   inst-2-bear:
    build: ./
    ports:
     - '9003:9003'
-   working_dir: /home/jray/docker/counting-service-2/wdir
+   working_dir: /usr/src/app
+
+```
+
+#### build
+
+`sudo `which docker-compose` build`
 
 #### run
 
 `sudo `which docker-compose` up`
-
-
 
 
 ## Docker Compose Bootstrap

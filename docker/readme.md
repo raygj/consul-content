@@ -221,13 +221,18 @@ As long as there are enough servers in the datacenter to maintain quorum, Consul
 - stop consul service
 - terraform destroy environment
 
-# Appendix: Multiple Containers, Single Consul Client
+# Appendix: Multiple Containers, Single VM...and single Consul Client
 
-we can take the basic setup from above and extrapolate it a bit into a common use case: single host running multiple instances of the same service. this introduces a new challenge of managing connectivity to instances as they are instantiated or stopped. also, we want clients to have a consistent (not necessarily human-friendly) port to access our service.
+we can take the basic setup from above and extrapolate it a bit into a common use case: single host running multiple instances of the same service. [Docker Compose](https://docs.docker.com/compose/) is used to define the app environment in a `Dockerfile`, define one or more services in a `docker-compose.yml` file, and then run them all with one command, `docker-compose up`. sort of a Kubernetes `configmap`.
 
-so the pattern is to register each service uniquely with Consul as it is instantiated so Consul can register the instance, and provide it as a discovery response. at this point Consul could act as a load balancer and round-robin DNS responses to the two services...or we could add another layer in the form of a Nginx load balancer and then manage the configuration of Nginx via Consul Template. so as the lifecycle of services occurs, Nginx's configuration will reflect only healthy services.
+this architecture introduces a new challenges:
 
-realistically, this scenario may push the limits of effectiveness of a "single VM and Docker" and would be better served to [schedule the containers via Nomad](https://www.nomadproject.io/docs/internals/scheduling/scheduling.html) and using [Consul Connect on Nomad](https://www.consul.io/docs/connect/platform/nomad.html).
+- managing connectivity to instances as they are instantiated or stopped
+- maintaining a known, consistent (not necessarily human-friendly) port to access our service
+
+the pattern i am looking to validate is this: is each service registered uniquely with Consul as it is instantiated...so Consul can include the unique instances to provide instances with discovery responses? at this point Consul could act as a load balancer and round-robin DNS responses to the two services...or we could add another layer in the form of a Nginx load balancer and then manage the configuration of Nginx via Consul Template. so as the lifecycle of services occurs, Nginx's configuration will reflect only healthy services.
+
+realistically, this scenario may push the limits of effectiveness of a "single VM and Docker" and would be better served to [schedule the containers via Nomad](https://www.nomadproject.io/docs/internals/scheduling/scheduling.html) and using [Consul Connect on Nomad](https://www.consul.io/docs/connect/platform/nomad.html). that said, there is a lot of Docker in the wild (some being managed by Rancher, Swarm, etc.).
 
 ![diagram](/docker/images/consul-docker-lab.png)
 
@@ -237,7 +242,7 @@ realistically, this scenario may push the limits of effectiveness of a "single V
 
 #### create working dir on Docker host
 
-`mkdir ~/docker`
+`mkdir ~/counting-service-compose/`
 
 #### prepare counting-service binary
 
@@ -245,13 +250,15 @@ git clone repo, unzip/move `counting-service` binary that will be built into the
 
 ```
 
-cd ~/docker
+cd ~/counting-service-compose/
 
 git clone https://github.com/raygj/consul-content
 
-cp consul-content/docker/counting-service/counting-service ~/docker
+cp consul-content/docker/counting-service/counting-service ~/counting-service-compose/
 
 ```
+
+**note** Docker Compose will use the working directory as a source for container naming and management components
 
 #### create a Dockerfile
 
@@ -259,7 +266,7 @@ cp consul-content/docker/counting-service/counting-service ~/docker
 
 ```
 
-nano ~/docker/Dockerfile
+nano ~/counting-service-compose/Dockerfile
 
 FROM alpine:3.7
 WORKDIR /usr/src/app
@@ -274,7 +281,7 @@ this will define the instances and expose each at on unique port
 
 ```
 
-nano ~/docker/docker-compose.yml
+nano ~/counting-service-compose/docker-compose.yml
 
 version: '3'
 services:
@@ -286,8 +293,8 @@ services:
 
   inst-2-bear:
    build: ./
-   ports:
-    - '9003:9003'
+   expose:
+    - '9003'
    working_dir: /usr/src/app
 
 ```

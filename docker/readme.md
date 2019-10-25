@@ -27,13 +27,19 @@ Terraform code with bootstrap script to prepare CentOS and install Consul servic
 # Step 1: Deploy CentOS7 host
 
 - use TF code and check syslog for any errors before continuing
+- TF code calls a basic `bootsraph.sh` script that will install packages
+	- add/remove packages in this script prior to running TF apply
+- TF will also copy `consul-install.sh` script for installing Consul and `counting-service.zip` that contains the _counting-service_ binary
 
-# Step 2: Bootstrap host with provided script
+# Step 2: Install Consul
 
-- use TF code and bash script
-- set desired Consul version
-- add/remove packages
+- `consul-install.sh` was copied by TF to /tmp
+- open script, set desired Consul version on line 17
+- assuming a single Consul server was deployed, execute the script with something like `sudo ./tmp/consul-install.sh < IP address of VM >`
+	- the script will grab the IP address and use it to populate Consul config files
+	- there are occasions when the script completes, but throws erros re: firewalld configuration...if so, just rerun the script
 - check syslog for any errors before continuing
+- start Consul `sudo systemctl start consul`
 
 # Step 3: Validate Consul and Docker operations
 
@@ -67,6 +73,19 @@ sudo docker run \
 
 you should see messages such as "Joining cluster..." and "Consul agent running!"
 
+gracefully stop `ctrl-c` and then start in detached mode:
+
+```
+
+sudo docker rm fishstick
+
+sudo docker run -d \
+   --name=fishstick \
+   consul agent -node=counting-service-host -join=192.168.1.195
+   
+```
+
+
 ## validate counting service is up
 
 from CLI `curl http://localhost:9001` or from a web broswer
@@ -88,9 +107,41 @@ client-1   172.17.0.2:8301     alive   client  1.6.1  2         dc1  <default>
 
 ```
 
-# Step 5: Run a Consul Client and Register a Service
+## start the Consul container in detached mode
 
-_open a third terminal session_
+**note** this is the Consul instance running in Client mode that will be used to register services from containers to Consul, which is why you'd run it detached once validation from the previous step is completed
+
+from the existing terminal where you having an interactive container running, gracefully stop the container with `ctrl-c` and then start in detached mode:
+
+```
+
+sudo docker rm fishstick
+
+sudo docker run -d \
+   --name=fishstick \
+   consul agent -node=counting-service-host -join=192.168.1.195
+   
+```
+
+**note** in this step we are changing the node name to be more descriptive for the Consul UI
+
+
+## validate counting service is up
+
+from CLI `curl http://localhost:9001` or from a web broswer
+
+you will see a respons such as:
+
+```
+
+[jray@esxi-sandbox ~]$ curl http://localhost:9001
+{"count":1,"hostname":"007bbff89134"}[jray@esxi-sandbox ~]$
+
+```
+
+# Step 5: Register the Counting Service with Consul
+
+recall that Consul is running on the VM, not in a Docker container, _open a second terminal session_...
 
 use the HashiCorp demo "counting service" as a lightweight demo service:
 
@@ -129,6 +180,8 @@ if you go back to the original terminal window, you will see a message such as "
 ```
 
 you can also verify this in the Consul UI, browse to `http://< your Consul host >:8500
+
+
 
 # Step 6: Consul DNS for Discovery
 
@@ -239,6 +292,8 @@ services:
 
 ```
 
+**note** to increase your confidence in proper YAML formating, use [this YAML validator](https://codebeautify.org/yaml-validator)
+
 #### build
 
 `sudo `which docker-compose` build`
@@ -247,10 +302,21 @@ services:
 
 `sudo `which docker-compose` up`
 
+both containers should be up now, `docker_inst-1-badger` and `docker_inst-2-bear`
+
+`sudo `which docker-compose` ps`
+
+try a curl to both, with optional trace in the event you need to debug:
+
+`curl http://localhost:9002 --trace-ascii dump1.txt`
+
+`curl http://localhost:9003 --trace-ascii dump2.txt`
 
 ## Docker Compose Bootstrap
 
-[install](https://docs.docker.com/compose/install/)guide
+Docker Compose and dependencies are installed within the `bootstrap.sh` script, run as a part of the TF boostrap process; the source is here in the [/terrafrom/templates directory](https://github.com/raygj/consul-content/tree/master/docker/terraform/templates)
+
+[install](https://docs.docker.com/compose/install/) guide
 
 - dependencies:
 

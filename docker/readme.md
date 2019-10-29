@@ -377,61 +377,123 @@ we will use the NodeJS and MySQL containers to create a Docker-Compose configura
 
 ## create Consul Dockerfile and Consul agent JSON files
 
+- references:
+
+https://www.consul.io/docs/agent/services.html
+
+https://www.consul.io/docs/agent/checks.html#service-bound-checks
+
+JSON linter: https://jsonlint.com
+
+- create a local directory for Consul configuration files
+- this dir will ultimately be copied to the container via the Docker file
+
 `mkdir ~/docker/node-docker-microservice/consul`
 
 ```
 
-cat << EOF > ~/docker/node-docker-microservice/consul/docker-compose.yml
-
+cat << EOF > ~/docker/node-docker-microservice/consul/Dockerfile
 FROM consul:latest
 ADD . /consul/config
-RUN  agent -retry-join consul-server-bootstrap -client 192.168.1.195
-CMD 
+RUN agent -retry-join -bind=0.0.0.0 >> ~/consul/log/output.log &
+EXPOSE 8301
+EXPOSE 8301 8301/udp 8302 8302/udp
+EXPOSE 8500 8600 8600/udp  
 EOF
 
 ```
+
+[reference](https://github.com/hashicorp/da-connect-demo/blob/master/docker_build/Dockerfile.consul_agent)
 
 ```
 
 cat << EOF > ~/docker/node-docker-microservice/consul/users-service.json
 
 {
-  "service": {
-    "name": "user-service",
-    "tags": ["nodejs"],
-    "address": "",
-    },
-    "port": 8123,
-    "checks": [
-      {
-        "args": ["/usr/local/bin/check_redis.py"],
-        "interval": "10s"
-    }
+	"bind_addr": "0.0.0.0",
+	"datacenter": "dc1",
+	"node_name": "sandbox-docker",
+	"server": false,
+	"service": {
+		"name": "user-service-api",
+		"tags": ["nodejs"],
+		"port": 8123
+	},
+	"rejoin_after_leave": true,
+	"retry_join": ["192.168.1.195"]
 }
 EOF
 
 ```
+
+
+**need to resolve** broken health check version:
+
+{
+    "bind_addr": "0.0.0.0",
+	"datacenter": "dc1",
+	"node_name": "sandbox-docker",
+	"server": false,
+	"service": {
+		"name": "user-service-api",
+		"tags": ["nodejs"],
+		"port": 8123,
+		"check": {
+			"id": "user-service-api",
+			"name": "User Service API Status",
+			"service_id": "user-service-api",
+			"ttl": "5s"
+						
+		}
+	},
+	"rejoin_after_leave": true,
+	"retry_join": ["192.168.1.195"]
+}
+
+
 
 ```
 
 cat << EOF > ~/docker/node-docker-microservice/consul/users-service-mysql.json
 
 {
-  "service": {
-    "name": "user-service-mysql",
-    "tags": ["mysql"],
-    "address": "",
-    },
-    "port": 3306,
-    "checks": [
-      {
-        "args": ["/usr/local/bin/check_redis.py"],
-        "interval": "10s"
-    }
+	"bind_addr": "0.0.0.0",
+	"datacenter": "dc1",
+	"node_name": "sandbox-docker",
+	"server": false,
+	"service": {
+		"name": "user-service-mysql",
+		"tags": ["mysql"],
+		"port": 3306
+	},
+	"rejoin_after_leave": true,
+	"retry_join": ["192.168.1.195"]
 }
 EOF
 
 ```
+
+**need to resolve** broken health check version:
+
+{
+    "bind_addr": "0.0.0.0",
+	"datacenter": "dc1",
+	"node_name": "sandbox-docker",
+	"server": false,
+	"service": {
+		"name": "user-service-mysql",
+		"tags": ["mysql"],
+		"port": 3306,
+		"check": {
+			"id": "user-service-mysql",
+			"name": "User Service API MySQL Instance",
+			"service_id": "user-service-mysql",
+			"ttl": "5s"
+		}
+	},
+	"rejoin_after_leave": true,
+	"retry_join": ["192.168.1.195"]
+}
 
 ## create Docker-Compose file
 
@@ -454,11 +516,8 @@ services:
   db:
     build: ./test-database
 
-  consul-agent-node-demo: &consul-agent
-    image: consul:latest
-    command: "agent -retry-join consul-server-bootstrap -client 0.0.0.0"
-    command: "echo '{\"service\": {\"name\": \"users-service\", \"tags\": [\"go\"], \"port\": 8123}}' >> /consul/config/users-service.json"
-    command: "echo '{\"service\": {\"name\": \"users-service-mysql\", \"tags\": [\"go\"], \"port\": 3306}}' >> /consul/config/users-service-mysql.json"
+  consul-agent:
+    build: ./consul
 EOF
 
 ```

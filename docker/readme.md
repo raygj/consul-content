@@ -223,26 +223,381 @@ As long as there are enough servers in the datacenter to maintain quorum, Consul
 
 # Appendix: Multiple Containers, Single VM...and single Consul Client
 
-we can take the basic setup from above and extrapolate it a bit into a common use case: single host running multiple instances of the same service. [Docker Compose](https://docs.docker.com/compose/) is used to define the app environment in a `Dockerfile`, define one or more services in a `docker-compose.yml` file, and then run them all with one command, `docker-compose up`. sort of a Kubernetes `configmap`.
+we can take the basic setup from above and extrapolate it a bit into a common use case: single host running multiple services (if they were multiple instances of the same service, `replicas` or a scheduler should be used.
 
-this architecture introduces a new challenges:
+we can use [Docker Compose](https://docs.docker.com/compose/) to make it easier to instantiate multiple containers at once.
 
-- managing connectivity to instances as they are instantiated or stopped
+a `Dockerfile` is created for each service, one or more services is then defined in a single `docker-compose.yml` file, and then `docker-compose up` to start all services (containers) - sort of a Kubernetes `configmap`.
+
+this architecture introduces new challenges:
+
+- managing connectivity to services as they are instantiated or stopped
 - maintaining a known, consistent (not necessarily human-friendly) port to access our service
 
-the pattern i am looking to validate is this: is each service registered uniquely with Consul as it is instantiated...so Consul can include the unique instances to provide instances with discovery responses? at this point Consul could act as a load balancer and round-robin DNS responses to the two services...or we could add another layer in the form of a Nginx load balancer and then manage the configuration of Nginx via Consul Template. so as the lifecycle of services occurs, Nginx's configuration will reflect only healthy services.
+the pattern i am looking to validate is this: is each service registered uniquely with Consul as it is instantiated...so Consul can include the unique instances in a discovery responses? at this point Consul could act as a load balancer and round-robin DNS responses to the two of instances of the same service...or we could add another layer in the form of a Nginx load balancer and then manage the configuration of Nginx via Consul Template. so as the lifecycle of services occurs, Nginx's configuration will reflect only healthy services.
 
 realistically, this scenario may push the limits of effectiveness of a "single VM and Docker" and would be better served to [schedule the containers via Nomad](https://www.nomadproject.io/docs/internals/scheduling/scheduling.html) and using [Consul Connect on Nomad](https://www.consul.io/docs/connect/platform/nomad.html). that said, there is a lot of Docker in the wild (some being managed by Rancher, Swarm, etc.).
 
 ![diagram](/docker/images/consul-docker-lab.png)
 
-## Create two instances of the same counting service
+
+# NodeJS and MySQL Example
+
+[source](https://dwmkerr.com/learn-docker-by-building-a-microservice/)
+
+## MySQL
+
+### create database scripts and Dockerfile
+
+`mkdir -p ~/docker/node-docker-microservice`
+
+`git clone https://github.com/dwmkerr/node-docker-microservice.git`
+
+or manually create files in the next few steps:
+
+`mkdir ~/docker/node-docker-microservice/test-database`
+
+- create `setup.sql` that will be called in Dockerfile
+
+```
+
+cat << EOF > ~/docker/node-docker-microservice/test-database/setup.sql
+
+create table directory (user_id INT NOT NULL AUTO_INCREMENT PRIMARY KEY, email TEXT, phone_number TEXT);
+
+insert into directory (email, phone_number) values ('homer@thesimpsons.com', '+1 888 123 1111');
+insert into directory (email, phone_number) values ('marge@thesimpsons.com', '+1 888 123 1112');
+insert into directory (email, phone_number) values ('maggie@thesimpsons.com', '+1 888 123 1113');
+insert into directory (email, phone_number) values ('lisa@thesimpsons.com', '+1 888 123 1114');
+insert into directory (email, phone_number) values ('bart@thesimpsons.com', '+1 888 123 1115');
+EOF
+
+```
+
+- Dockerfile that sets MySQL and calls `setup.sql` created in the previous step
+
+```
+
+cat <<EOF > ~/docker/node-docker-microservice/test-database/Dockerfile
+
+FROM mysql:5
+
+ENV MYSQL_ROOT_PASSWORD 123
+ENV MYSQL_DATABASE users
+ENV MYSQL_USER users_service
+ENV MYSQL_PASSWORD 123
+
+ADD setup.sql /docker-entrypoint-initdb.d
+EOF
+
+```
+
+## node setup
+
+### create required files
+
+- create directory structure
+
+`cd ~/docker/`
+
+`git clone https://github.com/dwmkerr/node-docker-microservice.git`
+
+### quick test
+
+- build a new image
+
+`cd ~/docker/node-docker-microservice/users-service`
+
+`sudo docker build -t node4 .`
+
+- run a container with this image, in interactive mode
+
+`sudo docker run -it node4`
+
+- interace with node process
+
+at the `>` prompt issue `process.version`
+
+response such as `'v4.9.1'`
+
+then, at the `>` prompt issue `process.exit(0)` to close the service connection
+
+- at this point we have a functional node container
+
+### modify node Dockerfile
+
+- modify Dockerfile
+
+```
+
+cat << EOF > ~/docker/users-service/Dockerfile
+
+# Use Node v4 as the base image.
+FROM node:4
+
+# Add everything in the current directory to our image, in the 'app' folder.
+ADD . /app
+
+# Install dependencies
+RUN cd /app; \
+    npm install --production
+
+# Expose our server port.
+EXPOSE 8123
+
+# Run our app.
+CMD ["node", "/app/index.js"]
+EOF
+
+```
+
+- test again with the updated Dockerfile
+
+`cd ~/docker/node-docker-microservice/users-service`
+
+`sudo docker build -t users-service .`
+
+`sudo docker run -it -p 8123:8123 users-service`
+
+curl test:
+
+`curl http://192.168.1.195:8123`
+
+## Check In
+
+at this point we've got two containers that are functional, but not working together because the containers were not `linked` and therefore there is no connectivity between them. in this next section, we could link them and test, then add Consul to the mix...but it will be more interesting if we used Docker-Compose to bring up both containers together (linked) as a stack with Consul included in the Docker-Comopose file. 
+
+we would then have two containers, communicating and registering their services (and health checks) with Consul. we would then build off this by adding Consul Connect to provide connectivity between containers without linking them.
+
+a final scenario would be add nginx as a front-end load balancer to the API service, and then using Consul Template to update nginx's configuration as node services were added or removed so clients would assured a health response.
+
+# Docker-Compose and Consul
+
+we will use the NodeJS and MySQL containers to create a Docker-Compose configuration that includes Consul in client mode that will register the services
+
+## create Consul Dockerfile and Consul agent JSON files
+
+`mkdir ~/docker/node-docker-microservice/consul`
+
+```
+
+cat << EOF > ~/docker/node-docker-microservice/consul/docker-compose.yml
+
+FROM consul:latest
+ADD . /consul/config
+RUN  agent -retry-join consul-server-bootstrap -client 192.168.1.195
+CMD 
+EOF
+
+```
+
+```
+
+cat << EOF > ~/docker/node-docker-microservice/consul/users-service.json
+
+{
+  "service": {
+    "name": "user-service",
+    "tags": ["nodejs"],
+    "address": "",
+    },
+    "port": 8123,
+    "checks": [
+      {
+        "args": ["/usr/local/bin/check_redis.py"],
+        "interval": "10s"
+    }
+}
+EOF
+
+```
+
+```
+
+cat << EOF > ~/docker/node-docker-microservice/consul/users-service-mysql.json
+
+{
+  "service": {
+    "name": "user-service-mysql",
+    "tags": ["mysql"],
+    "address": "",
+    },
+    "port": 3306,
+    "checks": [
+      {
+        "args": ["/usr/local/bin/check_redis.py"],
+        "interval": "10s"
+    }
+}
+EOF
+
+```
+
+## create Docker-Compose file
+
+defines users-service and db containers, creates relationship between the two
+
+```
+
+cat << EOF > ~/docker/node-docker-microservice/docker-compose.yml
+
+version: '3'
+services:
+  users-service:
+    build: ./users-service
+    ports:
+     - "8123:8123"
+    depends_on:
+     - db
+    environment:
+     - DATABASE_HOST=db
+  db:
+    build: ./test-database
+
+  consul-agent-node-demo: &consul-agent
+    image: consul:latest
+    command: "agent -retry-join consul-server-bootstrap -client 0.0.0.0"
+    command: "echo '{\"service\": {\"name\": \"users-service\", \"tags\": [\"go\"], \"port\": 8123}}' >> /consul/config/users-service.json"
+    command: "echo '{\"service\": {\"name\": \"users-service-mysql\", \"tags\": [\"go\"], \"port\": 3306}}' >> /consul/config/users-service-mysql.json"
+EOF
+
+```
+
+#### build
+
+```
+cd ~/docker/node-docker-microservice
+
+sudo `which docker-compose` build
+
+```
+
+#### run
+
+```
+cd ~/docker/node-docker-microservice
+
+sudo `which docker-compose` up
+
+```
+
+# Docker-Compose Consul
+
+## Docker Compose Consul code
+
+[source](https://github.com/hashicorp/consul/blob/master/demo/docker-compose-cluster/docker-compose.yml)
+
+**note** for this scenario, the Consul Server is running on the Docker host VM, so the service `consul-server-1` , `consul-server-2` , and `consul-server-bootstrap` in this Docker Compose file could be eliminated
+
+
+```
+
+version: '3'
+
+services:
+
+  consul-agent-1: &consul-agent
+    image: consul:latest
+    networks:
+      - consul-demo
+    command: "agent -retry-join consul-server-bootstrap -client 0.0.0.0"
+
+  consul-agent-2:
+    <<: *consul-agent
+
+  consul-agent-3:
+    <<: *consul-agent
+
+  consul-server-1: &consul-server
+    <<: *consul-agent
+    command: "agent -server -retry-join consul-server-bootstrap -client 0.0.0.0"
+
+  consul-server-2:
+    <<: *consul-server
+
+  consul-server-bootstrap:
+    <<: *consul-agent
+    ports:
+      - "8400:8400"
+      - "8500:8500"
+      - "8600:8600"
+      - "8600:8600/udp"
+    command: "agent -server -bootstrap-expect 3 -ui -client 0.0.0.0"
+
+networks:
+  consul-demo:
+
+```
+
+## demo
+
+[source](https://github.com/hashicorp/da-connect-demo) Nic Jackson demo
+
+### code
+
+**note** for this scenario, the Consul Server is running on the Docker host VM, so the first service `consul_server` in this Docker Compose file could be eliminated
+
+```
+
+version: '3'
+services:
+
+  consul_server:
+    image: nicholasjackson/consul_connect:latest
+    environment:
+      CONSUL_BIND_INTERFACE: eth0
+      CONSUL_UI_BETA: "true"
+    ports:
+      - "8501:8500"
+    networks:
+      connect_network: {}
+  
+  service1:
+    image: nicholasjackson/consul_connect_agent:latest
+    volumes:
+      - "./connect_service1a.json:/servicea.json"
+      - "./connect_service1b.json:/serviceb.json"
+    networks:
+      connect_network: {}
+    environment:
+      CONSUL_BIND_INTERFACE: eth0
+      CONSUL_CLIENT_INTERFACE: eth0
+    command:
+      - "-retry-join"
+      - "consul_server"
+  
+  service2:
+    image: nicholasjackson/consul_connect_agent:latest
+    volumes:
+      - "./connect_service1a.json:/servicea.json"
+      - "./connect_service1b.json:/serviceb.json"
+    networks:
+      connect_network: {}
+    environment:
+      CONSUL_BIND_INTERFACE: eth0
+      CONSUL_CLIENT_INTERFACE: eth0
+    command:
+      - "-retry-join"
+      - "consul_server"
+
+networks:
+  connect_network:
+    external: false
+    driver: bridge
+
+```
+
+# Version X
+
+## Create Two Instances of a Service
+
+use a Python web server for ease
 
 ### configure and start two instances
 
 #### create working dir on Docker host
 
-`mkdir ~/counting-service-compose/`
+`mkdir ~/consul-demo/`
 
 #### prepare counting-service binary
 
@@ -346,3 +701,17 @@ Docker Compose and dependencies are installed within the `bootstrap.sh` script, 
 ```
 sudo `which docker-compose` --version
 ```
+
+# Appendix: TCPdump Container
+
+mkdir ~/docker/tcpdump
+
+cd ~/docker/tcpdump
+
+sudo docker build -t tcpdump - <<EOF 
+FROM ubuntu 
+RUN apt-get install -y tcpdump 
+CMD tcpdump -i eth0 
+EOF
+
+docker run -it --net=container:< container name > tcpdump tcpdump port 80

@@ -383,6 +383,8 @@ https://www.consul.io/docs/agent/services.html
 
 https://www.consul.io/docs/agent/checks.html#service-bound-checks
 
+https://imaginea.gitbooks.io/consul-devops-handbook/content/agent_configuration.html
+
 JSON linter: https://jsonlint.com
 
 - create a local directory for Consul configuration files

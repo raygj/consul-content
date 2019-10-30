@@ -1,0 +1,17 @@
+# load-balancer.conf.ctmpl
+# nginx configuration template to be rendered by consul template
+# file should be located in /etc/nginx/conf.d/load-balancer.conf.ctmpl
+# var web will be fetched from consul registry nd render the final load balancer configuration file
+upstream backend {
+{{ range service "web" }}
+  server {{ .Address }}:{{ .Port }};
+{{ end }}
+}
+
+server {
+   listen 80;
+
+   location / {
+      proxy_pass http://backend;
+   }
+}

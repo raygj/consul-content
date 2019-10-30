@@ -1,0 +1,14 @@
+# web-service.json
+# consul service registration for web instance running on port 80
+# file should be located in /consul.d/ dir
+# enable_local_script_checks must be set to true in the configuration of the consul agent where the web server is running.
+{
+  "service": {
+    "Name": "web",
+    "Port": 80,
+    "check": {
+      "args": ["curl", "localhost"],
+      "interval": "3s"
+    }
+  }
+}

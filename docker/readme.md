@@ -396,6 +396,8 @@ JSON linter: https://jsonlint.com
 
 `mkdir ~/docker/node-docker-microservice/consul`
 
+- write Dockerfile for Consul Agent container that includes `ADD` argument to copy all files from the source dir to the container
+
 ```
 
 cat << EOF > ~/docker/node-docker-microservice/consul/Dockerfile
@@ -408,6 +410,8 @@ EXPOSE 8500 8600 8600/udp
 EOF
 
 ```
+
+- write Consul Agent configuration file that will be imported into the container
 
 [reference](https://github.com/hashicorp/da-connect-demo/blob/master/docker_build/Dockerfile.consul_agent)
 

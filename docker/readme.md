@@ -245,6 +245,8 @@ realistically, this scenario may push the limits of effectiveness of a "single V
 
 [source](https://dwmkerr.com/learn-docker-by-building-a-microservice/)
 
+[Nic Jackson demo](https://github.com/hashicorp/da-connect-demo)
+
 ## MySQL
 
 ### create database scripts and Dockerfile
@@ -385,6 +387,8 @@ https://www.consul.io/docs/agent/checks.html#service-bound-checks
 
 https://imaginea.gitbooks.io/consul-devops-handbook/content/agent_configuration.html
 
+https://learn.hashicorp.com/consul/integrations/nginx-consul-template
+
 JSON linter: https://jsonlint.com
 
 - create a local directory for Consul configuration files
@@ -452,7 +456,7 @@ EOF
 	"retry_join": ["192.168.1.195"]
 }
 
-
+research using Lighthouse: https://expressjs.com/en/advanced/healthcheck-graceful-shutdown.html or a simple local script?
 
 ```
 
@@ -496,6 +500,9 @@ EOF
 	"rejoin_after_leave": true,
 	"retry_join": ["192.168.1.195"]
 }
+
+here's a link to a MySQL health script: https://gist.github.com/aw/1071144 that could be loaded and then called by Consul
+Consul doc on health checks: https://www.consul.io/docs/agent/checks.html#service-bound-checks
 
 ## create Docker-Compose file
 
@@ -590,13 +597,13 @@ networks:
 
 ```
 
-## demo
+# Appendix: DA-Connect Demo
 
 [source](https://github.com/hashicorp/da-connect-demo) Nic Jackson demo
 
 ### code
 
-**note** for this scenario, the Consul Server is running on the Docker host VM, so the first service `consul_server` in this Docker Compose file could be eliminated
+**note** for this guide, the Consul Server is running on the Docker host VM, so the first service `consul_server` in this Docker Compose file could be eliminated
 
 ```
 
@@ -645,73 +652,6 @@ networks:
   connect_network:
     external: false
     driver: bridge
-
-```
-
-# Version X
-
-## Create Two Instances of a Service
-
-use a Python web server for ease
-
-### configure and start two instances
-
-#### create working dir on Docker host
-
-`mkdir ~/consul-demo/`
-
-#### prepare counting-service binary
-
-git clone repo, unzip/move `counting-service` binary that will be built into the container in the next steps
-
-```
-
-cd ~/counting-service-compose/
-
-git clone https://github.com/raygj/consul-content
-
-cp consul-content/docker/counting-service/counting-service ~/counting-service-compose/
-
-```
-
-**note** Docker Compose will use the working directory as a source for container naming and management components
-
-#### create a Dockerfile
-
-[official](https://docs.docker.com/engine/reference/builder/#cmd)guide
-
-```
-
-nano ~/counting-service-compose/Dockerfile
-
-FROM alpine:3.7
-WORKDIR /usr/src/app
-COPY counting-service .
-CMD ["./counting-service"]
-
-```
-
-#### create docker-compose config
-
-this will define the instances and expose each at on unique port
-
-```
-
-nano ~/counting-service-compose/docker-compose.yml
-
-version: '3'
-services:
-  inst-1-badger:
-   build: ./
-   ports:
-    - '9002:9002'
-   working_dir: /usr/src/app
-
-  inst-2-bear:
-   build: ./
-   expose:
-    - '9003'
-   working_dir: /usr/src/app
 
 ```
 
@@ -776,3 +716,9 @@ CMD tcpdump -i eth0
 EOF
 
 docker run -it --net=container:< container name > tcpdump tcpdump port 80
+
+# Appendix: Client-Server Walkthrough
+
+WIP: look into using this guide to create a client-server container as an example of containerized service
+
+https://www.freecodecamp.org/news/a-beginners-guide-to-docker-how-to-create-a-client-server-side-with-docker-compose-12c8cf0ae0aa/

@@ -1,4 +1,4 @@
-# scratchpad
+# scratchpad and backlog of other use cases
 
 mostly naive first-attempt scribblings
 
@@ -6,70 +6,109 @@ but there could be some value in exploring the env var function - to automate th
 
 
 
-## attempt 2
+# Docker-Compose Consul
 
-i was able to get the docker-compose to fire up the two containers, but hit a wall on network - i think there is a port conflict because the counting-service is hard-coded to port 9001
+## Docker Compose Consul code
 
-## Create two instances of the same counting service
+[source](https://github.com/hashicorp/consul/blob/master/demo/docker-compose-cluster/docker-compose.yml)
 
-### configure and start two instances
+**note** for this scenario, the Consul Server is running on the Docker host VM, so the service `consul-server-1` , `consul-server-2` , and `consul-server-bootstrap` in this Docker Compose file could be eliminated
 
-#### create working dir on Docker host
-
-`mkdir ~/counting-service-compose/`
-
-#### prepare counting-service binary
-
-git clone repo, unzip/move `counting-service` binary that will be built into the container in the next steps
 
 ```
 
-cd ~/counting-service-compose/
+version: '3'
 
-git clone https://github.com/raygj/consul-content
+services:
 
-cp consul-content/docker/counting-service/counting-service ~/counting-service-compose/
+  consul-agent-1: &consul-agent
+    image: consul:latest
+    networks:
+      - consul-demo
+    command: "agent -retry-join consul-server-bootstrap -client 0.0.0.0"
+
+  consul-agent-2:
+    <<: *consul-agent
+
+  consul-agent-3:
+    <<: *consul-agent
+
+  consul-server-1: &consul-server
+    <<: *consul-agent
+    command: "agent -server -retry-join consul-server-bootstrap -client 0.0.0.0"
+
+  consul-server-2:
+    <<: *consul-server
+
+  consul-server-bootstrap:
+    <<: *consul-agent
+    ports:
+      - "8400:8400"
+      - "8500:8500"
+      - "8600:8600"
+      - "8600:8600/udp"
+    command: "agent -server -bootstrap-expect 3 -ui -client 0.0.0.0"
+
+networks:
+  consul-demo:
 
 ```
 
-**note** Docker Compose will use the working directory as a source for container naming and management components
+# Appendix: DA-Connect Demo
 
-#### create a Dockerfile
+[source](https://github.com/hashicorp/da-connect-demo) Nic Jackson demo
 
-[official](https://docs.docker.com/engine/reference/builder/#cmd)guide
+### code
 
-```
-
-nano ~/counting-service-compose/Dockerfile
-
-FROM alpine:3.7
-WORKDIR /usr/src/app
-COPY counting-service .
-CMD ["./counting-service"]
+**note** for this guide, the Consul Server is running on the Docker host VM, so the first service `consul_server` in this Docker Compose file could be eliminated
 
 ```
-
-#### create docker-compose config
-
-this will define the instances and expose each at on unique port
-
-```
-
-nano ~/counting-service-compose/docker-compose.yml
 
 version: '3'
 services:
-  inst-1-badger:
-   build: ./
-   ports:
-    - '9002:9002'
-   working_dir: /usr/src/app
 
-  inst-2-bear:
-   build: ./
-   expose:
-    - '9003'
-   working_dir: /usr/src/app
+  consul_server:
+    image: nicholasjackson/consul_connect:latest
+    environment:
+      CONSUL_BIND_INTERFACE: eth0
+      CONSUL_UI_BETA: "true"
+    ports:
+      - "8501:8500"
+    networks:
+      connect_network: {}
+  
+  service1:
+    image: nicholasjackson/consul_connect_agent:latest
+    volumes:
+      - "./connect_service1a.json:/servicea.json"
+      - "./connect_service1b.json:/serviceb.json"
+    networks:
+      connect_network: {}
+    environment:
+      CONSUL_BIND_INTERFACE: eth0
+      CONSUL_CLIENT_INTERFACE: eth0
+    command:
+      - "-retry-join"
+      - "consul_server"
+  
+  service2:
+    image: nicholasjackson/consul_connect_agent:latest
+    volumes:
+      - "./connect_service1a.json:/servicea.json"
+      - "./connect_service1b.json:/serviceb.json"
+    networks:
+      connect_network: {}
+    environment:
+      CONSUL_BIND_INTERFACE: eth0
+      CONSUL_CLIENT_INTERFACE: eth0
+    command:
+      - "-retry-join"
+      - "consul_server"
+
+networks:
+  connect_network:
+    external: false
+    driver: bridge
 
 ```
 
@@ -100,105 +139,48 @@ try a curl to both, with optional trace in the event you need to debug:
 `curl http://localhost:9003 --trace-ascii dump2.txt`
 
 
+# Appendix: Client-Server Walkthrough
 
-## attempt 1
+WIP: look into using this guide to create a client-server container as an example of containerized service
 
-instance 1, badger:
+https://www.freecodecamp.org/news/a-beginners-guide-to-docker-how-to-create-a-client-server-side-with-docker-compose-12c8cf0ae0aa/
 
-```
 
-sudo docker run \
-   -p 9002:9002 \
-   -d \
-   --name=badger \
-   hashicorp/counting-service:0.0.2
+# Appendix: Docker Compose Bootstrap
 
-```
+Docker Compose and dependencies are installed within the `bootstrap.sh` script, run as a part of the TF boostrap process; the source is here in the [/terrafrom/templates directory](https://github.com/raygj/consul-content/tree/master/docker/terraform/templates)
 
-- modify the consul config, with the corresponding ports:
+[install](https://docs.docker.com/compose/install/) guide
 
-sudo docker exec fishstick /bin/sh -c "echo '{\"service\": {\"name\": \"counting\", \"tags\": [\"go\"], \"port\": 9002}}' >> /consul/config/counting.json"
+- dependencies:
 
-- instance 2, bear:
+`sudo yum install -y python-dev py-pip libffi-dev openssl-dev gcc libc-dev make`
 
-```
+- Docker Compose
 
-sudo docker run \
-   -p 9003:9003 \
-   -d \
-   --name=bear \
-   hashicorp/counting-service:0.0.2
+`sudo curl -L "https://github.com/docker/compose/releases/download/1.24.1/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose`
+
+`sudo chmod +x /usr/local/bin/docker-compose`
+
+- test Docker Compose
 
 ```
-
-- modify the consul config, with the corresponding ports:
-   
-`sudo docker exec fishstick /bin/sh -c "echo '{\"service\": {\"name\": \"counting\", \"tags\": [\"go\"], \"port\": 9003}}' >> /consul/config/counting.json"`
-
-
-### set environment variables
-
-- the value of `HOST_PORT` is the port that will be bound on the host VM
-- the value of `CONT_PORT` is the port that will be bound on the container
-
-**note** these values must be unique to avoid port conflicts
-
-- instance 1, badger:
-
+sudo `which docker-compose` --version
 ```
 
-export INST_1_HOST_PORT=
-export INST_1_CONT_PORT=
 
-```
+# Appendix: TCPdump Container
 
-- instance 2, bear:
+mkdir ~/docker/tcpdump
 
-```
+cd ~/docker/tcpdump
 
-export INST_2_HOST_PORT=
-export INST_2_CONT_PORT=
+sudo docker build -t tcpdump - <<EOF 
+FROM ubuntu 
+RUN apt-get install -y tcpdump 
+CMD tcpdump -i eth0 
+EOF
 
-```
-
-- instance 1, badger:
-
-```
-
-sudo docker run \
---env INST_1_HOST_PORT --env INST_1_CONT_PORT \
--d \
---name=badger \
-hashicorp/counting-service:0.0.2
-
-ubuntu env | grep VAR
+docker run -it --net=container:< container name > tcpdump tcpdump port 80
 
 
-
-sudo docker run \
-   -p 9002:9002 \
-   -d \
-   --name=badger \
-   hashicorp/counting-service:0.0.2
-
-```
-
-- modify the consul config, with the corresponding ports:
-
-sudo docker exec fishstick /bin/sh -c "echo '{\"service\": {\"name\": \"counting\", \"tags\": [\"go\"], \"port\": 9002}}' >> /consul/config/counting.json"
-
-- instance 2, bear:
-
-```
-
-sudo docker run \
-   -p 9003:9003 \
-   -d \
-   --name=bear \
-   hashicorp/counting-service:0.0.2
-
-```
-
-- modify the consul config, with the corresponding ports:
-   
-`sudo docker exec fishstick /bin/sh -c "echo '{\"service\": {\"name\": \"counting\", \"tags\": [\"go\"], \"port\": 9003}}' >> /consul/config/counting.json"`

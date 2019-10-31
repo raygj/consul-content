@@ -2,17 +2,17 @@
 
 ## Goal
 
-Join Consul clients running in Docker to a non-Docker Consul server
+Join Consul clients running in Docker to a non-Docker Consul instance to show how the Consul Agent can be injected into a container, register services, and perform health checks.
 
 [official learn.hashicorp guide](https://learn.hashicorp.com/consul/day-0/containers-guide)
 
 ## Environment
 
-Single CentOS 7 host, running Consul and Docker
+Single CentOS 7 VM, running single-node Consul server and Docker
 
 ### Terraform Bootstrap
 
-Terraform code with bootstrap script to prepare CentOS and install Consul service
+Terraform code with bootstrap script to prepare CentOS and install single-node Consul server
 
 ## Steps
 
@@ -23,6 +23,10 @@ Terraform code with bootstrap script to prepare CentOS and install Consul servic
 5. Connect a Docker Consul client and register a service
 6. Use Consul DNS for Discovery
 7. Docker and Consul Commands
+
+**Appendices**
+
+1. Docker-Compose, multi-container walkthrough
 
 # Step 1: Deploy CentOS7 host
 
@@ -221,43 +225,36 @@ As long as there are enough servers in the datacenter to maintain quorum, Consul
 - stop consul service
 - terraform destroy environment
 
-# Appendix: Multiple Containers, Single VM...and single Consul Client
+# Appendix 1: Multiple Containers, Single VM...and single Consul Agent
 
-we can take the basic setup from above and extrapolate it a bit into a common use case: single host running multiple services (if they were multiple instances of the same service, `replicas` or a scheduler should be used.
+we can take the basic setup from above and extrapolate it a bit into a common use case: single host running multiple services.
 
 we can use [Docker Compose](https://docs.docker.com/compose/) to make it easier to instantiate multiple containers at once.
 
-a `Dockerfile` is created for each service, one or more services is then defined in a single `docker-compose.yml` file, and then `docker-compose up` to start all services (containers) - sort of a Kubernetes `configmap`.
+## Approach
 
-this architecture introduces new challenges:
+a `Dockerfile` is created for each service, one or more services is then defined in a single `docker-compose.yml` file, and then `docker-compose build/up` is used to compile and start all services (containers).
 
-- managing connectivity to services as they are instantiated or stopped
-- maintaining a known, consistent (not necessarily human-friendly) port to access our service
+the pattern i am looking to validate is this: is each service registered uniquely with Consul as it is instantiated...so Consul can include the unique instances in a discovery responses? at this point Consul could act as a load balancer and round-robin DNS responses to the two of instances of the same service...or we could add another layer in the form of a Nginx load balancer and then manage the configuration of Nginx via Consul Template. so as the lifecycle of services occurs, [Nginx's configuration](https://learn.hashicorp.com/consul/integrations/nginx-consul-template) will reflect only healthy services.
 
-the pattern i am looking to validate is this: is each service registered uniquely with Consul as it is instantiated...so Consul can include the unique instances in a discovery responses? at this point Consul could act as a load balancer and round-robin DNS responses to the two of instances of the same service...or we could add another layer in the form of a Nginx load balancer and then manage the configuration of Nginx via Consul Template. so as the lifecycle of services occurs, Nginx's configuration will reflect only healthy services.
+realistically, this scenario may push the limits of effectiveness of a "single VM and Docker" and would be better served to [schedule the containers via Nomad](https://www.nomadproject.io/docs/internals/scheduling/scheduling.html). that said, there is a lot of Docker in the wild (some being managed by Rancher, Swarm, etc.).
 
-realistically, this scenario may push the limits of effectiveness of a "single VM and Docker" and would be better served to [schedule the containers via Nomad](https://www.nomadproject.io/docs/internals/scheduling/scheduling.html) and using [Consul Connect on Nomad](https://www.consul.io/docs/connect/platform/nomad.html). that said, there is a lot of Docker in the wild (some being managed by Rancher, Swarm, etc.).
+## NodeJS and MySQL Example
 
-![diagram](/docker/images/consul-docker-lab.png)
+- build a NodeJS and MySQL container, register with Consul Agent container, and perform health checks
+- start with Docker-Compose, then stop an individual container to show Consul health checks in action
 
+[code source](https://dwmkerr.com/learn-docker-by-building-a-microservice/)
 
-# NodeJS and MySQL Example
+[Nic Jackson demo reference](https://github.com/hashicorp/da-connect-demo)
 
-[source](https://dwmkerr.com/learn-docker-by-building-a-microservice/)
+### MySQL Container
 
-[Nic Jackson demo](https://github.com/hashicorp/da-connect-demo)
+1. create directory structure
 
-## MySQL
+`mkdir -p ~/docker/node-docker-microservice/test-database`
 
-### create database scripts and Dockerfile
-
-`mkdir -p ~/docker/node-docker-microservice`
-
-`git clone https://github.com/dwmkerr/node-docker-microservice.git`
-
-or manually create files in the next few steps:
-
-`mkdir ~/docker/node-docker-microservice/test-database`
+2. create database scripts
 
 - create `setup.sql` that will be called in Dockerfile
 
@@ -275,6 +272,8 @@ insert into directory (email, phone_number) values ('bart@thesimpsons.com', '+1 
 EOF
 
 ```
+
+3. create mysql Dockerfile
 
 - Dockerfile that sets MySQL and calls `setup.sql` created in the previous step
 
@@ -294,41 +293,16 @@ EOF
 
 ```
 
-## node setup
+### NodeJS Container
 
-### create required files
-
-- create directory structure
+1. create directory structure
 
 `cd ~/docker/`
 
-`git clone https://github.com/dwmkerr/node-docker-microservice.git`
+`mkdir ~/docker/node-docker-microservice/users-service`
 
-### quick test
 
-- build a new image
-
-`cd ~/docker/node-docker-microservice/users-service`
-
-`sudo docker build -t node4 .`
-
-- run a container with this image, in interactive mode
-
-`sudo docker run -it node4`
-
-- interace with node process
-
-at the `>` prompt issue `process.version`
-
-response such as `'v4.9.1'`
-
-then, at the `>` prompt issue `process.exit(0)` to close the service connection
-
-- at this point we have a functional node container
-
-### modify node Dockerfile
-
-- modify Dockerfile
+2. create node Dockerfile
 
 ```
 
@@ -352,8 +326,27 @@ CMD ["node", "/app/index.js"]
 EOF
 
 ```
+3. build an image
 
-- test again with the updated Dockerfile
+`cd ~/docker/node-docker-microservice/users-service`
+
+`sudo docker build -t node4 .`
+
+4. run a container with this image, in interactive mode
+
+`sudo docker run -it node4`
+
+- interace with node process
+
+at the `>` prompt issue `process.version`
+
+response such as `'v4.9.1'`
+
+then, at the `>` prompt issue `process.exit(0)` to close the service connection
+
+- at this point we have a functional node container
+
+5. test the Node container is listening
 
 `cd ~/docker/node-docker-microservice/users-service`
 
@@ -361,23 +354,39 @@ EOF
 
 `sudo docker run -it -p 8123:8123 users-service`
 
-curl test:
+- curl test:
 
 `curl http://192.168.1.195:8123`
 
+- assuming success, stop the container before moving on
+
+`sudo docker ps`
+
+**grab** the container ID and use it in the next command
+
+`sudo docker stop < container ID >`
+
 ## Check In
 
-at this point we've got two containers that are functional, but not working together because the containers were not `linked` and therefore there is no connectivity between them. in this next section, we could link them and test, then add Consul to the mix...but it will be more interesting if we used Docker-Compose to bring up both containers together (linked) as a stack with Consul included in the Docker-Comopose file. 
+at this point we've got two containers that are functional, but not working together because the containers were not `linked` and therefore there is no connectivity between them.
+
+next we could link them and test, then add Consul to the mix...but it will be more interesting if we used Docker-Compose to bring up both containers together (linked) as a stack with Consul included in the Docker-Comopose file. 
 
 we would then have two containers, communicating and registering their services (and health checks) with Consul. we would then build off this by adding Consul Connect to provide connectivity between containers without linking them.
 
 a final scenario would be add nginx as a front-end load balancer to the API service, and then using Consul Template to update nginx's configuration as node services were added or removed so clients would assured a health response.
 
-# Docker-Compose and Consul
+### Add Docker Link Configuration
 
-we will use the NodeJS and MySQL containers to create a Docker-Compose configuration that includes Consul in client mode that will register the services
 
-## create Consul Dockerfile and Consul agent JSON files
+
+### Docker-Compose Boostrap
+
+we will use the NodeJS and MySQL containers we just defined in the last section within a single Docker-Compose configuration that includes Consul in client/agent mode. we will include a Consul configuration that will register the MySQL and Node services.
+
+## Consul Agent Container
+
+1. create Consul Dockerfile and Consul agent JSON files
 
 - references:
 
@@ -391,8 +400,7 @@ https://learn.hashicorp.com/consul/integrations/nginx-consul-template
 
 JSON linter: https://jsonlint.com
 
-- create a local directory for Consul configuration files
-- this dir will ultimately be copied to the container via the Docker file
+- create a local directory for Consul configuration files; this dir will ultimately be copied to the container via the Docker file
 
 `mkdir ~/docker/node-docker-microservice/consul`
 
@@ -553,139 +561,7 @@ sudo `which docker-compose` up
 
 ```
 
-# Docker-Compose Consul
-
-## Docker Compose Consul code
-
-[source](https://github.com/hashicorp/consul/blob/master/demo/docker-compose-cluster/docker-compose.yml)
-
-**note** for this scenario, the Consul Server is running on the Docker host VM, so the service `consul-server-1` , `consul-server-2` , and `consul-server-bootstrap` in this Docker Compose file could be eliminated
-
-
-```
-
-version: '3'
-
-services:
-
-  consul-agent-1: &consul-agent
-    image: consul:latest
-    networks:
-      - consul-demo
-    command: "agent -retry-join consul-server-bootstrap -client 0.0.0.0"
-
-  consul-agent-2:
-    <<: *consul-agent
-
-  consul-agent-3:
-    <<: *consul-agent
-
-  consul-server-1: &consul-server
-    <<: *consul-agent
-    command: "agent -server -retry-join consul-server-bootstrap -client 0.0.0.0"
-
-  consul-server-2:
-    <<: *consul-server
-
-  consul-server-bootstrap:
-    <<: *consul-agent
-    ports:
-      - "8400:8400"
-      - "8500:8500"
-      - "8600:8600"
-      - "8600:8600/udp"
-    command: "agent -server -bootstrap-expect 3 -ui -client 0.0.0.0"
-
-networks:
-  consul-demo:
-
-```
-
-# Appendix: DA-Connect Demo
-
-[source](https://github.com/hashicorp/da-connect-demo) Nic Jackson demo
-
-### code
-
-**note** for this guide, the Consul Server is running on the Docker host VM, so the first service `consul_server` in this Docker Compose file could be eliminated
-
-```
-
-version: '3'
-services:
-
-  consul_server:
-    image: nicholasjackson/consul_connect:latest
-    environment:
-      CONSUL_BIND_INTERFACE: eth0
-      CONSUL_UI_BETA: "true"
-    ports:
-      - "8501:8500"
-    networks:
-      connect_network: {}
-  
-  service1:
-    image: nicholasjackson/consul_connect_agent:latest
-    volumes:
-      - "./connect_service1a.json:/servicea.json"
-      - "./connect_service1b.json:/serviceb.json"
-    networks:
-      connect_network: {}
-    environment:
-      CONSUL_BIND_INTERFACE: eth0
-      CONSUL_CLIENT_INTERFACE: eth0
-    command:
-      - "-retry-join"
-      - "consul_server"
-  
-  service2:
-    image: nicholasjackson/consul_connect_agent:latest
-    volumes:
-      - "./connect_service1a.json:/servicea.json"
-      - "./connect_service1b.json:/serviceb.json"
-    networks:
-      connect_network: {}
-    environment:
-      CONSUL_BIND_INTERFACE: eth0
-      CONSUL_CLIENT_INTERFACE: eth0
-    command:
-      - "-retry-join"
-      - "consul_server"
-
-networks:
-  connect_network:
-    external: false
-    driver: bridge
-
-```
-
-**note** to increase your confidence in proper YAML formating, use [this YAML validator](https://codebeautify.org/yaml-validator)
-
-#### build
-
-```
-sudo `which docker-compose` build
-```
-
-#### run
-
-```
-sudo `which docker-compose` up
-```
-
-both containers should be up now, `docker_inst-1-badger` and `docker_inst-2-bear`
-
-```
-sudo `which docker-compose` ps
-```
-
-try a curl to both, with optional trace in the event you need to debug:
-
-`curl http://localhost:9002 --trace-ascii dump1.txt`
-
-`curl http://localhost:9003 --trace-ascii dump2.txt`
-
-## Docker Compose Bootstrap
+# Appendix: Docker Compose Bootstrap
 
 Docker Compose and dependencies are installed within the `bootstrap.sh` script, run as a part of the TF boostrap process; the source is here in the [/terrafrom/templates directory](https://github.com/raygj/consul-content/tree/master/docker/terraform/templates)
 
@@ -720,9 +596,3 @@ CMD tcpdump -i eth0
 EOF
 
 docker run -it --net=container:< container name > tcpdump tcpdump port 80
-
-# Appendix: Client-Server Walkthrough
-
-WIP: look into using this guide to create a client-server container as an example of containerized service
-
-https://www.freecodecamp.org/news/a-beginners-guide-to-docker-how-to-create-a-client-server-side-with-docker-compose-12c8cf0ae0aa/

@@ -8,7 +8,7 @@ var config = require('./config/config');
 
 //  Lots of verbose logging when we're starting up...
 console.log("--- Customer Service---");
-console.log("Connecting to customer repository...");
+console.log("Connecting to MySQL DB customer repository...");
 
 //  Log unhandled exceptions.
 process.on('uncaughtException', function(err) {
@@ -25,7 +25,7 @@ repository.connect({
   password: config.db.password,
   port: config.db.port
 }).then((repo) => {
-  console.log("Connected. Starting server...");
+  console.log("Connected to MySQL DB. Starting server...");
 
   return server.start({
     port: config.port,

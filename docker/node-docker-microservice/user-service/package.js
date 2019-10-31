@@ -1,7 +1,7 @@
 {
   "name": "users-service",
   "version": "1.0.0",
-  "description": "Basic service for retrieving user information from the directory.",
+  "description": "Basic service for retrieving user information from a local MySQL DB.",
   "repository": {
     "type": "git",
     "url": "git://github.com/dwmkerr/node-docker-microservice.git"
@@ -16,16 +16,16 @@
   "author": "Dave Kerr, dwmkerr@gmail.com",
   "license": "MIT",
   "dependencies": {
-    "express": "^4.13.4",
-    "morgan": "^1.7.0",
-    "mysql": "^2.10.2"
+    "express": ">=4.13.4",
+    "morgan": ">=1.7.0",
+    "mysql": ">=2.10.2"
   },
   "devDependencies": {
-    "eslint": "^2.7.0",
-    "mocha": "^2.4.5",
-    "node-inspector": "^0.12.7",
-    "should": "^8.3.0",
-    "supertest": "^1.2.0"
+    "eslint": ">=2.7.0",
+    "mocha": ">=2.4.5",
+    "node-inspector": ">=0.12.7",
+    "should": ">=8.3.0",
+    "supertest": ">=1.2.0"
   },
   "eslintConfig": {
     "parserOptions": {

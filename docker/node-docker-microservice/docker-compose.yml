@@ -8,9 +8,9 @@ services:
     depends_on:
      - db
     environment:
-     - DATABASE_HOST=mysql-srv-1
+     - DATABASE_HOST=db
   db:
-    container_name: mysql-srv-1
+    container_name: db
     build: ./test-database
     ports:
      - "3306:3306"

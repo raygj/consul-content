@@ -301,8 +301,11 @@ EOF
 
 `cd ~/docker/`
 
-`mkdir ~/docker/node-docker-microservice/users-service`
+`wget https://github.com/raygj/consul-content/archive/master.zip`
 
+`unzip master.zip`
+
+`cp consul-content-master/docker/node-docker-microservice/ ~/docker`
 
 2. create node Dockerfile
 
@@ -537,7 +540,7 @@ services:
     depends_on:
      - db
     environment:
-     - DATABASE_HOST=mysql-srv-1
+     - DATABASE_HOST=db
   db:
     container_name: mysql-srv-1
     build: ./test-database
@@ -558,6 +561,8 @@ cd ~/docker/node-docker-microservice
 sudo `which docker-compose` build
 
 ```
+
+**note** if you encounter errors while building the container images, you may need to fix the underlying problem and then run `sudo `which docker-compose` build --no-cache` to build the images cleanly
 
 6. run the containers using the docker-compose configuration
 
@@ -581,15 +586,24 @@ ca9154ab3110        node-docker-microservice_consul-agent    "docker-entrypoint.
 
 7. test connectivity and service registration
 
-- from a browser:
+- from a browser
 
-`http://< IP of VM >:8123`
+`http://192.168.1.195:8123/search?email=lisa@thesimpsons.com`
 
-- Consul UI:
+	- valid response:
+
+```
+
+{"email":"lisa@thesimpsons.com","phoneNumber":"+1 888 123 1114"}
+
+```
+
+- check Consul UI for registered services
 
 `http://< IP of VM >:8500`
 
 **dc1 > Services**
+
 
 ### troubleshooting
 
@@ -608,6 +622,34 @@ ca9154ab3110        node-docker-microservice_consul-agent    "docker-entrypoint.
 - view HOSTS file of container named `node-srv-1`
 
 `sudo docker exec node-srv-1 cat /etc/hosts`
+
+- view all containers
+
+`sudo docker container ls -a`
+
+- remove container from local library (helpful when rebuilding container with same name)
+
+`sudo docker rm < container ID >
+
+- exec to mysql container and log into database with creds used by node `config.js`
+
+`sudo docker exec -it mysql-srv-1 /bin/bash`
+
+`mysql -uusers_service -p123`
+
+	- show database, connect to `users` database
+
+`show databases;`
+
+`use users;`
+
+	- view tables, view data
+
+`SHOW TABLES;`
+
+`SELECT * FROM directory`
+
+`exit`
 
 #### docker env vars
 

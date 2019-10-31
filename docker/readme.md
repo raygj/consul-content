@@ -289,6 +289,8 @@ ENV MYSQL_USER users_service
 ENV MYSQL_PASSWORD 123
 
 ADD setup.sql /docker-entrypoint-initdb.d
+
+EXPOSE 3306
 EOF
 
 ```
@@ -368,9 +370,7 @@ then, at the `>` prompt issue `process.exit(0)` to close the service connection
 
 ## Check In
 
-at this point we've got two containers that are functional, but not working together because the containers were not `linked` and therefore there is no connectivity between them.
-
-next we could link them and test, then add Consul to the mix...but it will be more interesting if we used Docker-Compose to bring up both containers together (linked) as a stack with Consul included in the Docker-Comopose file. 
+at this point we've got two containers that are functional. it will be more interesting if we use Docker-Compose to bring up both containers together (linked) as a stack with Consul included in the Docker-Comopose file. 
 
 we would then have two containers, communicating and registering their services (and health checks) with Consul. we would then build off this by adding Consul Connect to provide connectivity between containers without linking them.
 
@@ -384,9 +384,9 @@ a final scenario would be add nginx as a front-end load balancer to the API serv
 
 we will use the NodeJS and MySQL containers we just defined in the last section within a single Docker-Compose configuration that includes Consul in client/agent mode. we will include a Consul configuration that will register the MySQL and Node services.
 
-## Consul Agent Container
+if you used the included Terraform and [bootstrap.sh](https://github.com/raygj/consul-content/blob/master/docker/terraform/templates/bootstrap.sh) script, Docker-Compose is already installed, otherwise, see the [included Appendix](https://github.com/raygj/consul-content/tree/master/docker#appendix-docker-compose-bootstrap) for install steps.
 
-1. create Consul Dockerfile and Consul agent JSON files
+## Consul Agent Container
 
 - references:
 
@@ -400,9 +400,11 @@ https://learn.hashicorp.com/consul/integrations/nginx-consul-template
 
 JSON linter: https://jsonlint.com
 
-- create a local directory for Consul configuration files; this dir will ultimately be copied to the container via the Docker file
+1. create a local directory for Consul configuration files; this dir will ultimately be copied to the container via the Docker file
 
 `mkdir ~/docker/node-docker-microservice/consul`
+
+2. create Consul Dockerfile
 
 - write Dockerfile for Consul Agent container that includes `ADD` argument to copy all files from the source dir to the container
 
@@ -419,9 +421,9 @@ EOF
 
 ```
 
-- write Consul Agent configuration file that will be imported into the container
+3. write Consul Agent JSON configuration files for Node and MySQL services that will be imported into the container [reference](https://github.com/hashicorp/da-connect-demo/blob/master/docker_build/Dockerfile.consul_agent)
 
-[reference](https://github.com/hashicorp/da-connect-demo/blob/master/docker_build/Dockerfile.consul_agent)
+- Node (users-service) definition:
 
 ```
 
@@ -444,8 +446,8 @@ EOF
 
 ```
 
-
 **need to resolve** broken health check version:
+research using Lighthouse: https://expressjs.com/en/advanced/healthcheck-graceful-shutdown.html or a simple local script?
 
 {
     "bind_addr": "0.0.0.0",
@@ -468,7 +470,7 @@ EOF
 	"retry_join": ["192.168.1.195"]
 }
 
-research using Lighthouse: https://expressjs.com/en/advanced/healthcheck-graceful-shutdown.html or a simple local script?
+- MySQL (users-service-mysql) defintion:
 
 ```
 
@@ -492,6 +494,8 @@ EOF
 ```
 
 **need to resolve** broken health check version:
+here's a link to a MySQL health script: https://gist.github.com/aw/1071144 that could be loaded and then called by Consul
+Consul doc on health checks: https://www.consul.io/docs/agent/checks.html#service-bound-checks
 
 {
     "bind_addr": "0.0.0.0",
@@ -513,12 +517,9 @@ EOF
 	"retry_join": ["192.168.1.195"]
 }
 
-here's a link to a MySQL health script: https://gist.github.com/aw/1071144 that could be loaded and then called by Consul
-Consul doc on health checks: https://www.consul.io/docs/agent/checks.html#service-bound-checks
+4. create Docker-Compose file
 
-## create Docker-Compose file
-
-defines users-service and db containers, creates relationship between the two
+_defines users-service and db containers, creates relationship between the two_
 
 ```
 
@@ -543,7 +544,7 @@ EOF
 
 ```
 
-#### build
+5. build the containers using the previously-defined Dockerfiles
 
 ```
 cd ~/docker/node-docker-microservice
@@ -552,7 +553,7 @@ sudo `which docker-compose` build
 
 ```
 
-#### run
+6. run the containers using the docker-compose configuration
 
 ```
 cd ~/docker/node-docker-microservice
@@ -560,6 +561,28 @@ cd ~/docker/node-docker-microservice
 sudo `which docker-compose` up
 
 ```
+
+7. test connectivity and service registration
+
+- from a browser:
+
+`http://< IP of VM >:8123`
+
+- Consul UI:
+
+`http://< IP of VM >:8500`
+
+**dc1 > Services**
+
+
+### troubleshooting
+
+- view logs of container `node-docker-microservice_db_1`
+
+`sudo docker logs node-docker-microservice_db_1 | tail -n 2`
+
+
+
 
 # Appendix: Docker Compose Bootstrap
 

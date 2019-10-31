@@ -519,7 +519,9 @@ Consul doc on health checks: https://www.consul.io/docs/agent/checks.html#servic
 
 4. create Docker-Compose file
 
-_defines users-service and db containers, creates relationship between the two_
+- defines users-service and db containers, creates relationship between the two
+- note, the node `users-service` contains a Docker `environment` argument to set an env var for `DATABASE_HOST` to `db` which is the DNS name set in the local HOSTS file of the container
+- see [this reference](https://docs.docker.com/compose/environment-variables/), implication is that [envconsul](https://hub.docker.com/r/hashicorp/envconsul/) can be used to set this env var after the container is running OR an external process could be run to re-instantiate the container based on a Consul watch when DB host value needs to change (much like a setting a new password value) - it's just as efficient or more so, to instantiate a new container rather than [mutate a running one](https://cloud.google.com/solutions/best-practices-for-operating-containers).
 
 ```
 
@@ -528,17 +530,21 @@ cat << EOF > ~/docker/node-docker-microservice/docker-compose.yml
 version: '3'
 services:
   users-service:
+    container_name: node-srv-1
     build: ./users-service
     ports:
      - "8123:8123"
     depends_on:
      - db
     environment:
-     - DATABASE_HOST=db
+     - DATABASE_HOST=mysql-srv-1
   db:
+    container_name: mysql-srv-1
     build: ./test-database
-
+    ports:
+     - "3306:3306"
   consul-agent:
+    container_name: consul-agent-1
     build: ./consul
 EOF
 
@@ -562,6 +568,17 @@ sudo `which docker-compose` up
 
 ```
 
+- view containers:
+
+```
+
+CONTAINER ID        IMAGE                                    COMMAND                  CREATED             STATUS              PORTS                                                        NAMES
+d0766ee27606        node-docker-microservice_users-service   "node /app/index.js"     17 seconds ago      Up 16 seconds       0.0.0.0:8123->8123/tcp                                       node-srv-1
+058deb39b320        node-docker-microservice_db              "docker-entrypoint..."   18 seconds ago      Up 17 seconds       0.0.0.0:3306->3306/tcp, 33060/tcp                            mysql-srv-1
+ca9154ab3110        node-docker-microservice_consul-agent    "docker-entrypoint..."   18 seconds ago      Up 17 seconds       8300-8302/tcp, 8500/tcp, 8301-8302/udp, 8600/tcp, 8600/udp   consul-agent-1
+
+```
+
 7. test connectivity and service registration
 
 - from a browser:
@@ -574,15 +591,27 @@ sudo `which docker-compose` up
 
 **dc1 > Services**
 
-
 ### troubleshooting
 
-- view logs of container `node-docker-microservice_db_1`
+- view logs of container `mysql-srv-1`
 
-`sudo docker logs node-docker-microservice_db_1 | tail -n 2`
+`sudo docker logs mysql-srv-1 | tail -n 2`
 
+- interactive (-it) command line access to container `node-srv-1`, from here you can issue any normal *nix CLI commands
 
+`sudo docker exec -it node-srv-1 /bin/bash`
 
+- print env var from container `node-docker-microservice_users-service_1`
+
+`sudo docker exec node-srv-1 printenv | grep DATABASE`
+
+- view HOSTS file of container named `node-srv-1`
+
+`sudo docker exec node-srv-1 cat /etc/hosts`
+
+#### docker env vars
+
+additional work that can be done to obfiscate secrets or provide automation during container builds, see [this reference blog post](https://medium.com/better-programming/using-variables-in-docker-compose-265a604c2006)
 
 # Appendix: Docker Compose Bootstrap
 

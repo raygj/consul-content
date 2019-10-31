@@ -1,0 +1,19 @@
+version: '3'
+services:
+  users-service:
+    container_name: node-srv-1
+    build: ./users-service
+    ports:
+     - "8123:8123"
+    depends_on:
+     - db
+    environment:
+     - DATABASE_HOST=mysql-srv-1
+  db:
+    container_name: mysql-srv-1
+    build: ./test-database
+    ports:
+     - "3306:3306"
+  consul-agent:
+    container_name: consul-agent-1
+    build: ./consul

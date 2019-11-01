@@ -379,8 +379,9 @@ we would then have two containers, communicating and registering their services 
 
 a final scenario would be add nginx as a front-end load balancer to the API service, and then using Consul Template to update nginx's configuration as node services were added or removed so clients would assured a health response.
 
-### Add Docker Link Configuration
+this is what we are going to build:
 
+[diagram](docker/images/consul-docker-lab-crawl-stage.png)
 
 
 ### Docker-Compose Boostrap
@@ -391,17 +392,13 @@ if you used the included Terraform and [bootstrap.sh](https://github.com/raygj/c
 
 ## Consul Agent Container
 
-- references:
+- Consul container references:
 
-https://www.consul.io/docs/agent/services.html
+	- https://www.consul.io/docs/agent/services.html
 
-https://www.consul.io/docs/agent/checks.html#service-bound-checks
+	- https://www.consul.io/docs/agent/checks.html#service-bound-checks
 
-https://imaginea.gitbooks.io/consul-devops-handbook/content/agent_configuration.html
-
-https://learn.hashicorp.com/consul/integrations/nginx-consul-template
-
-JSON linter: https://jsonlint.com
+	- https://imaginea.gitbooks.io/consul-devops-handbook/content/agent_configuration.html
 
 1. create a local directory for Consul configuration files; this dir will ultimately be copied to the container via the Docker file
 
@@ -427,6 +424,7 @@ EOF
 3. write Consul Agent JSON configuration files for Node and MySQL services that will be imported into the container [reference](https://github.com/hashicorp/da-connect-demo/blob/master/docker_build/Dockerfile.consul_agent)
 
 - Node (users-service) definition:
+- if needed, use this [JSON linter](https://jsonlint.com) to make sure your code is clean
 
 ```
 
@@ -448,30 +446,6 @@ cat << EOF > ~/docker/node-docker-microservice/consul/users-service.json
 EOF
 
 ```
-
-**need to resolve** broken health check version:
-research using Lighthouse: https://expressjs.com/en/advanced/healthcheck-graceful-shutdown.html or a simple local script?
-
-{
-    "bind_addr": "0.0.0.0",
-	"datacenter": "dc1",
-	"node_name": "sandbox-docker",
-	"server": false,
-	"service": {
-		"name": "user-service-api",
-		"tags": ["nodejs"],
-		"port": 8123,
-		"check": {
-			"id": "user-service-api",
-			"name": "User Service API Status",
-			"service_id": "user-service-api",
-			"ttl": "5s"
-						
-		}
-	},
-	"rejoin_after_leave": true,
-	"retry_join": ["192.168.1.195"]
-}
 
 - MySQL (users-service-mysql) defintion:
 
@@ -495,30 +469,6 @@ cat << EOF > ~/docker/node-docker-microservice/consul/users-service-mysql.json
 EOF
 
 ```
-
-**need to resolve** broken health check version:
-here's a link to a MySQL health script: https://gist.github.com/aw/1071144 that could be loaded and then called by Consul
-Consul doc on health checks: https://www.consul.io/docs/agent/checks.html#service-bound-checks
-
-{
-    "bind_addr": "0.0.0.0",
-	"datacenter": "dc1",
-	"node_name": "sandbox-docker",
-	"server": false,
-	"service": {
-		"name": "user-service-mysql",
-		"tags": ["mysql"],
-		"port": 3306,
-		"check": {
-			"id": "user-service-mysql",
-			"name": "User Service API MySQL Instance",
-			"service_id": "user-service-mysql",
-			"ttl": "5s"
-		}
-	},
-	"rejoin_after_leave": true,
-	"retry_join": ["192.168.1.195"]
-}
 
 4. create Docker-Compose file
 
@@ -653,7 +603,15 @@ ca9154ab3110        node-docker-microservice_consul-agent    "docker-entrypoint.
 
 #### docker env vars
 
-additional work that can be done to obfiscate secrets or provide automation during container builds, see [this reference blog post](https://medium.com/better-programming/using-variables-in-docker-compose-265a604c2006)
+additional work that can be done to obfuscate secrets or provide automation during container builds, see [this reference blog post](https://medium.com/better-programming/using-variables-in-docker-compose-265a604c2006)
+
+# Next Steps
+
+- configure a more in-depth Consul health check for Node and MySQL services
+- deploy another Docker VM to host a few more instances of the Node container and a Consul Agent sidecar
+- register all instances with Consul datacenter
+- deploy a Nginx service to front-end the Node microservices with a dynamic configuration driven by Consul Template
+	- fail instances or whole VMs to demo dynamic configuration of Nginx to keep the service healthy and available
 
 # Appendix: Docker Compose Bootstrap
 
@@ -679,7 +637,13 @@ sudo `which docker-compose` --version
 
 # Appendix: TCPdump Container
 
-mkdir ~/docker/tcpdump
+- create directory for tcpdump container files
+
+`mkdir ~/docker/tcpdump`
+
+- define container and run
+
+```
 
 cd ~/docker/tcpdump
 
@@ -689,4 +653,6 @@ RUN apt-get install -y tcpdump
 CMD tcpdump -i eth0 
 EOF
 
-docker run -it --net=container:< container name > tcpdump tcpdump port 80
+sudo docker run -it --net=container:< container name > tcpdump tcpdump port < target port to capture >
+
+```

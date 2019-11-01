@@ -381,7 +381,7 @@ a final scenario would be add nginx as a front-end load balancer to the API serv
 
 this is what we are going to build:
 
-[diagram](docker/images/consul-docker-lab-crawl-stage.png)
+![diagram](/docker/images/consul-docker-lab-crawl-stage.png)
 
 ### Docker-Compose Bootstrap
 

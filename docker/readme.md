@@ -225,7 +225,9 @@ As long as there are enough servers in the datacenter to maintain quorum, Consul
 - stop consul service
 - terraform destroy environment
 
-# Appendix 1: Multiple Containers, Single VM...and single Consul Agent
+# Appendix 1: Consul Crawl Stage; Registry and Discovery
+
+_Multiple Containers, Single VM...and single Consul Agent_
 
 we can take the basic setup from above and extrapolate it a bit into a common use case: single host running multiple services.
 

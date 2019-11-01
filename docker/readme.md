@@ -418,31 +418,7 @@ EOF
 
 1. create a local directory for Consul configuration files; this dir will ultimately be copied to the container via the Docker file
 
-```
-cat << EOF > ~/docker/node-docker-microservice/user-service/Dockerfile
-
-# Use Node v4 as the base image.
-FROM node:4
-
-# Add everything in the current directory to our image, in the 'app' folder.
-ADD . /app
-
-# Install dependencies
-RUN cd /app; \
-    npm install --production
-
-# Make healthcheck.sh executable
-RUN cd /app; \
-	chmod +x healthcheck.sh
-
-# Expose our server port.
-EXPOSE 8123
-
-# Run our app.
-CMD ["node", "/app/index.js"]
-EOF
-
-```
+`mkdir -p ~/docker/node-docker-microservice/consul/`
 
 2. create Consul Dockerfile
 

@@ -1,0 +1,27 @@
+{
+    "bind_addr": "0.0.0.0",
+    "datacenter": "dc1",
+    "node_name": "sandbox-docker",
+    "server": false,
+    "rejoin_after_leave": true,
+    "retry_join": ["192.168.1.195"],
+    "service": {
+        "name": "user-service-mysql",
+        "tags": ["mysql"],
+        "port": 3306,
+        "checks": [{
+                "id": "mysql-3306-OK",
+                "service_id": "user-service-mysql",
+                "name": "tcp 3306 active",
+                "tcp": "db:3306",
+                "interval": "10s"
+            },
+            {
+                "id": "mysql-query",
+                "name": "execute SQL query",
+                "args": ["sh", "/app", "./sqlquerycheck.sh"],
+                "interval": "10s"
+            }
+        ]
+    }
+}

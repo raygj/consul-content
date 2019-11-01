@@ -299,7 +299,7 @@ EOF
 
 ### NodeJS Container
 
-1. create directory structure
+1. copy from Git
 
 `cd ~/docker/`
 
@@ -307,13 +307,13 @@ EOF
 
 `unzip master.zip`
 
-`cp consul-content-master/docker/node-docker-microservice/ ~/docker`
+`cp -R ~/docker/consul-content-master/docker/node-docker-microservice/ ~/docker`
 
-2. create node Dockerfile
+2. manually create or edit node Dockerfile
 
 ```
 
-cat << EOF > ~/docker/node-docker-microservice/users-service/Dockerfile
+cat << EOF > ~/docker/node-docker-microservice/user-service/Dockerfile
 
 # Use Node v4 as the base image.
 FROM node:4
@@ -407,7 +407,30 @@ if you used the included Terraform and [bootstrap.sh](https://github.com/raygj/c
 
 1. create a local directory for Consul configuration files; this dir will ultimately be copied to the container via the Docker file
 
-`mkdir ~/docker/node-docker-microservice/consul`
+`cat << EOF > ~/docker/node-docker-microservice/user-service/Dockerfile
+
+# Use Node v4 as the base image.
+FROM node:4
+
+# Add everything in the current directory to our image, in the 'app' folder.
+ADD . /app
+
+# Install dependencies
+RUN cd /app; \
+    npm install --production
+
+# Make healthcheck.sh executable
+RUN cd /app; \
+	chmod +x healthcheck.sh
+
+# Expose our server port.
+EXPOSE 8123
+
+# Run our app.
+CMD ["node", "/app/index.js"]
+EOF
+
+```
 
 2. create Consul Dockerfile
 
@@ -416,12 +439,14 @@ if you used the included Terraform and [bootstrap.sh](https://github.com/raygj/c
 ```
 
 cat << EOF > ~/docker/node-docker-microservice/consul/Dockerfile
+
 FROM consul:latest
 ADD . /consul/config
 RUN agent -retry-join -bind=0.0.0.0 >> ~/consul/log/output.log &
 EXPOSE 8301
 EXPOSE 8301 8301/udp 8302 8302/udp
 EXPOSE 8500 8600 8600/udp  
+
 EOF
 
 ```

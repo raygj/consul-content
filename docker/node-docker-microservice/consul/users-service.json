@@ -1,0 +1,30 @@
+{
+    "bind_addr": "0.0.0.0",
+    "datacenter": "dc1",
+    "node_name": "sandbox-docker",
+    "server": false,
+    "enable_local_script_checks": true,
+    "rejoin_after_leave": true,
+    "retry_join": ["192.168.1.195"],
+    "service": {
+        "name": "user-service-api",
+        "tags": ["nodejs"],
+        "port": 8123,
+        "checks": [{
+                "id": "users-service-200",
+                "service_id": "user-service-api",
+                "name": "HTTP API on port 8123",
+                "http": "http://users-service:8123/search?email=homer@thesimpsons.com",
+                "tls_skip_verify": true,
+                "interval": "10s",
+                "method": "GET"
+            },
+            {
+                "id": "memory-usage-test",
+                "name": "check memory usage",
+                "args": ["sh", "/app", "./healthcheck.sh"],
+                "interval": "10s"
+            }
+        ]
+    }
+}

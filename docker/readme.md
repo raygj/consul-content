@@ -313,7 +313,7 @@ EOF
 
 ```
 
-cat << EOF > ~/docker/users-service/Dockerfile
+cat << EOF > ~/docker/node-docker-microservice/users-service/Dockerfile
 
 # Use Node v4 as the base image.
 FROM node:4
@@ -324,6 +324,10 @@ ADD . /app
 # Install dependencies
 RUN cd /app; \
     npm install --production
+
+# Make healthcheck.sh executable
+RUN cd /app; \
+	chmod +x healthcheck.sh
 
 # Expose our server port.
 EXPOSE 8123
@@ -424,7 +428,7 @@ EOF
 
 3. write Consul Agent JSON configuration files for Node and MySQL services that will be imported into the container [reference](https://github.com/hashicorp/da-connect-demo/blob/master/docker_build/Dockerfile.consul_agent)
 
-- Node (users-service) definition:
+- Node (users-service) definition
 - if needed, use this [JSON linter](https://jsonlint.com) to make sure your code is clean
 
 ```
@@ -436,17 +440,36 @@ cat << EOF > ~/docker/node-docker-microservice/consul/users-service.json
 	"datacenter": "dc1",
 	"node_name": "sandbox-docker",
 	"server": false,
+	"enable_local_script_checks": true,
+	"rejoin_after_leave": true,
+	"retry_join": ["192.168.1.195"],
 	"service": {
 		"name": "user-service-api",
 		"tags": ["nodejs"],
-		"port": 8123
-	},
-	"rejoin_after_leave": true,
-	"retry_join": ["192.168.1.195"]
+		"port": 8123,
+		"checks": [{
+				"id": "users-service-200",
+				"service_id": "user-service-api",
+				"name": "HTTP API on port 8123",
+				"http": "http://users-service:8123/search?email=homer@thesimpsons.com",
+				"tls_skip_verify": true,
+				"interval": "10s",
+				"method": "GET"
+			},
+			{
+				"id": "memory-usage-test",
+			    "name": "check memory usage",
+			    "args": ["sh", "/app", "./healthcheck.sh"],
+			    "interval": "10s"
+			}
+		]
+	}
 }
 EOF
 
 ```
+
+**note** in the Docker environment, the HTTP call is made to http://<container name> where <container name> is the name defined in the `docker-compose.yml` file
 
 - MySQL (users-service-mysql) defintion:
 
@@ -459,13 +482,27 @@ cat << EOF > ~/docker/node-docker-microservice/consul/users-service-mysql.json
 	"datacenter": "dc1",
 	"node_name": "sandbox-docker",
 	"server": false,
+	"rejoin_after_leave": true,
+	"retry_join": ["192.168.1.195"],
 	"service": {
 		"name": "user-service-mysql",
 		"tags": ["mysql"],
-		"port": 3306
-	},
-	"rejoin_after_leave": true,
-	"retry_join": ["192.168.1.195"]
+		"port": 3306,
+		"checks": [{
+				"id": "mysql-3306-OK",
+				"service_id": "user-service-mysql",
+				"name": "tcp 3306 active",
+				"tcp": "db:3306",
+				"interval": "10s"
+			},
+			{
+				"id": "mysql-query",
+				"name": "execute SQL query",
+				"args": ["sh", "/app", "./sqlquerycheck.sh"],
+				"interval": "10s"
+			}
+		]
+	}
 }
 EOF
 
@@ -570,6 +607,8 @@ ca9154ab3110        node-docker-microservice_consul-agent    "docker-entrypoint.
 
 `sudo docker exec -it node-srv-1 /bin/bash`
 
+**note** for consul image, use `sudo docker exec -it consul-agent-1 /bin/sh` which can be determined by using `sudo docker inspect < container name >` and look at CMD for what commands are available
+
 - print env var from container `node-docker-microservice_users-service_1`
 
 `sudo docker exec node-srv-1 printenv | grep DATABASE`
@@ -661,3 +700,103 @@ EOF
 sudo docker run -it --net=container:< container name > tcpdump tcpdump port < target port to capture >
 
 ```
+
+# Appendix: Consul Agent Health Checks
+
+- create these files in the recommended dir and they will be automatically included when executing `docker-compose build`
+- some of these are WIP and are not functional just yet
+
+## NodeJS Healthcheck
+
+- replace value with `host` to reflect the target container running the HTTP listner
+
+```
+
+cat << EOF > ~/docker/node-docker-microservice/users-service/healthcheck.js
+
+var http = require("http");
+
+var options = {  
+    host : "users-service",
+    port : "8312",
+    timeout : 2000
+};
+
+var request = http.request(options, (res) => {  
+    console.log(`STATUS: ${res.statusCode}`);
+    if (res.statusCode == 200) {
+        process.exit(0);
+    }
+    else {
+        process.exit(1);
+    }
+});
+
+request.on('error', function(err) {  
+    console.log('ERROR');
+    process.exit(1);
+});
+
+request.end();
+EOF
+
+```
+
+## WIP: Memory Utlization Script
+
+```
+
+cat << EOF > ~/docker/node-docker-microservice/users-service/healthcheck.sh
+
+#!/bin/sh
+ 
+free
+memusage=$(free | awk 'NR==2{printf "%d", $3*100/$2}')
+ 
+echo
+echo "Memory usage is roughly $memusage%"
+ 
+if [ "$memusage" -gt "98" ]; then
+	echo "Critical state"
+	exit 2
+elif [ "$memusage" -gt "80" ]; then
+	echo "Warning state"
+	exit 1
+else
+	exit 0
+fi
+EOF
+
+```
+
+## WIP: SQL Query Script
+
+```
+
+cat << EOF > ~/docker/node-docker-microservice/users-service/sqlquerycheck.sh
+
+#!/bin/bash
+
+mysql -uusers_service -p123 <<MY_QUERY
+USE users
+SHOW tables
+SELECT * FROM directory;
+MY_QUERY 
+
+echo "MySQL Query is $sqlstatus"
+ 
+if [ "$sqlstatus" == "" ]; then
+	echo "Critical state"
+	exit 2
+else
+	exit 0
+fi
+EOF
+
+```
+
+
+
+
+
+

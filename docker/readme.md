@@ -381,9 +381,9 @@ a final scenario would be add nginx as a front-end load balancer to the API serv
 
 this is what we are going to build:
 
-[diagram](/images/consul-docker-lab-crawl-stage.png)
+[diagram](/docker/images/consul-docker-lab-crawl-stage.png)
 
-### Docker-Compose Boostrap
+### Docker-Compose Bootstrap
 
 we will use the NodeJS and MySQL containers we just defined in the last section within a single Docker-Compose configuration that includes Consul in client/agent mode. we will include a Consul configuration that will register the MySQL and Node services.
 

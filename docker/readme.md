@@ -250,53 +250,6 @@ realistically, this scenario may push the limits of effectiveness of a "single V
 
 [Nic Jackson demo reference](https://github.com/hashicorp/da-connect-demo)
 
-### MySQL Container
-
-1. create directory structure
-
-`mkdir -p ~/docker/node-docker-microservice/test-database`
-
-2. create database scripts
-
-- create `setup.sql` that will be called in Dockerfile
-
-```
-
-cat << EOF > ~/docker/node-docker-microservice/test-database/setup.sql
-
-create table directory (user_id INT NOT NULL AUTO_INCREMENT PRIMARY KEY, email TEXT, phone_number TEXT);
-
-insert into directory (email, phone_number) values ('homer@thesimpsons.com', '+1 888 123 1111');
-insert into directory (email, phone_number) values ('marge@thesimpsons.com', '+1 888 123 1112');
-insert into directory (email, phone_number) values ('maggie@thesimpsons.com', '+1 888 123 1113');
-insert into directory (email, phone_number) values ('lisa@thesimpsons.com', '+1 888 123 1114');
-insert into directory (email, phone_number) values ('bart@thesimpsons.com', '+1 888 123 1115');
-EOF
-
-```
-
-3. create mysql Dockerfile
-
-- Dockerfile that sets MySQL and calls `setup.sql` created in the previous step
-
-```
-
-cat <<EOF > ~/docker/node-docker-microservice/test-database/Dockerfile
-
-FROM mysql:5
-
-ENV MYSQL_ROOT_PASSWORD 123
-ENV MYSQL_DATABASE users
-ENV MYSQL_USER users_service
-ENV MYSQL_PASSWORD 123
-
-ADD setup.sql /docker-entrypoint-initdb.d
-
-EXPOSE 3306
-EOF
-
-```
-
 ### NodeJS Container
 
 1. copy from Git
@@ -395,7 +348,65 @@ we will use the NodeJS and MySQL containers we just defined in the last section 
 
 if you used the included Terraform and [bootstrap.sh](https://github.com/raygj/consul-content/blob/master/docker/terraform/templates/bootstrap.sh) script, Docker-Compose is already installed, otherwise, see the [included Appendix](https://github.com/raygj/consul-content/tree/master/docker#appendix-docker-compose-bootstrap) for install steps.
 
+### MySQL Container
+
+- the dirs and files already exist from the Node Container step, but here are the commands and files if you want to make any changes
+
+
+1. creating directory and files
+
+`cd ~/docker/`
+
+`wget https://github.com/raygj/consul-content/archive/master.zip`
+
+`unzip master.zip`
+
+`cp -R ~/docker/consul-content-master/docker/node-docker-microservice/ ~/docker`
+
+2. create database scripts
+
+- create `setup.sql` that will be called in Dockerfile
+
+```
+
+cat << EOF > ~/docker/node-docker-microservice/test-database/setup.sql
+
+create table directory (user_id INT NOT NULL AUTO_INCREMENT PRIMARY KEY, email TEXT, phone_number TEXT);
+
+insert into directory (email, phone_number) values ('homer@thesimpsons.com', '+1 888 123 1111');
+insert into directory (email, phone_number) values ('marge@thesimpsons.com', '+1 888 123 1112');
+insert into directory (email, phone_number) values ('maggie@thesimpsons.com', '+1 888 123 1113');
+insert into directory (email, phone_number) values ('lisa@thesimpsons.com', '+1 888 123 1114');
+insert into directory (email, phone_number) values ('bart@thesimpsons.com', '+1 888 123 1115');
+EOF
+
+```
+
+3. create mysql Dockerfile
+
+- Dockerfile that sets MySQL and calls `setup.sql` created in the previous step
+
+```
+
+cat <<EOF > ~/docker/node-docker-microservice/test-database/Dockerfile
+
+FROM mysql:5
+
+ENV MYSQL_ROOT_PASSWORD 123
+ENV MYSQL_DATABASE users
+ENV MYSQL_USER users_service
+ENV MYSQL_PASSWORD 123
+
+ADD setup.sql /docker-entrypoint-initdb.d
+
+EXPOSE 3306
+EOF
+
+```
+
 ## Consul Agent Container
+
+- the dirs and files already exist from the Node Container step, but here are the commands and files if you want to make any changes
 
 - Consul container references:
 
@@ -407,7 +418,8 @@ if you used the included Terraform and [bootstrap.sh](https://github.com/raygj/c
 
 1. create a local directory for Consul configuration files; this dir will ultimately be copied to the container via the Docker file
 
-`cat << EOF > ~/docker/node-docker-microservice/user-service/Dockerfile
+```
+cat << EOF > ~/docker/node-docker-microservice/user-service/Dockerfile
 
 # Use Node v4 as the base image.
 FROM node:4

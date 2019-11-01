@@ -537,6 +537,10 @@ ca9154ab3110        node-docker-microservice_consul-agent    "docker-entrypoint.
 
 7. test connectivity and service registration
 
+- dig DNS check from CLI of Docker VM
+
+`dig @127.0.0.1 -p 8600 user-service-api.service.consul`
+
 - from a browser
 
 `http://192.168.1.195:8123/search?email=lisa@thesimpsons.com`

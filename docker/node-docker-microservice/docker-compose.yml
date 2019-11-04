@@ -10,7 +10,7 @@ services:
     environment:
      - DATABASE_HOST=db
   db:
-    container_name: db
+    container_name: mysql-srv-1
     build: ./test-database
     ports:
      - "3306:3306"

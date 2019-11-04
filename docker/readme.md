@@ -254,7 +254,7 @@ realistically, this scenario may push the limits of effectiveness of a "single V
 
 1. copy from Git
 
-`cd ~/docker/`
+`mkdir ~/docker`
 
 `wget https://github.com/raygj/consul-content/archive/master.zip`
 
@@ -266,7 +266,7 @@ realistically, this scenario may push the limits of effectiveness of a "single V
 
 ```
 
-cat << EOF > ~/docker/node-docker-microservice/user-service/Dockerfile
+cat << EOF > ~/docker/node-docker-microservice/users-service/Dockerfile
 
 # Use Node v4 as the base image.
 FROM node:4
@@ -350,12 +350,12 @@ if you used the included Terraform and [bootstrap.sh](https://github.com/raygj/c
 
 ### MySQL Container
 
-- the dirs and files already exist from the Node Container step, but here are the commands and files if you want to make any changes
-
+- the dirs and files already exist from the [NodeJS Container](https://github.com/raygj/consul-content/tree/master/docker#nodejs-container) step
+- here are the commands and files if you want to make any changes, if not skip ahead to [Consul Container](https://github.com/raygj/consul-content/tree/master/docker#consul-agent-container)
 
 1. creating directory and files
 
-`cd ~/docker/`
+`mkdir ~/docker`
 
 `wget https://github.com/raygj/consul-content/archive/master.zip`
 
@@ -482,7 +482,10 @@ EOF
 
 ```
 
-**note** in the Docker environment, the HTTP call is made to http://<container name> where <container name> is the name defined in the `docker-compose.yml` file
+**note**
+
+- in the Docker environment, the HTTP call is made to http://<container name> where <container name> is the name defined in the `docker-compose.yml` file
+- modify the `retry_join` argument to reflect the Consul Server LAN IP address
 
 - MySQL (users-service-mysql) defintion:
 
@@ -520,6 +523,10 @@ cat << EOF > ~/docker/node-docker-microservice/consul/users-service-mysql.json
 EOF
 
 ```
+**note**
+
+- in the Docker environment, the HTTP call is made to http://<container name> where <container name> is the name defined in the `docker-compose.yml` file
+- modify the `retry_join` argument to reflect the Consul Server LAN IP address
 
 4. create Docker-Compose file
 
@@ -550,6 +557,8 @@ services:
   consul-agent:
     container_name: consul-agent-1
     build: ./consul
+    ports:
+     - "8400:8400"
 EOF
 
 ```
@@ -575,6 +584,8 @@ sudo `which docker-compose` up
 ```
 
 - view containers:
+
+`sudo docker ps`
 
 ```
 

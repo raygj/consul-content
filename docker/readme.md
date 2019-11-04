@@ -2,13 +2,13 @@
 
 ## Goal
 
-Join Consul clients running in Docker to a non-Docker Consul instance to show how the Consul Agent can be injected into a container, register services, and perform health checks.
-
-[official learn.hashicorp guide](https://learn.hashicorp.com/consul/day-0/containers-guide)
+Join Consul clients running in Docker to a non-Docker Consul instance to show how the Consul Agent can be support via a sidecar container to register services, and perform health checks. Start with the basic [official learn.hashicorp guide](https://learn.hashicorp.com/consul/day-0/containers-guide) and expand into a two-tier microservice.
 
 ## Environment
 
 Single CentOS 7 VM, running single-node Consul server and Docker
+
+![diagram](/docker/images/consul-docker-lab-crawl-stage.png)
 
 ### Terraform Bootstrap
 
@@ -26,6 +26,7 @@ Terraform code with bootstrap script to prepare CentOS and install single-node C
 
 **Appendices**
 
+# Appendix: Consul Crawl Stage; Registry and Discovery
 # Appendix: Consul Agent Health Checks
 # Appendix: Docker Compose Bootstrap
 # Appendix: TCPdump Container
@@ -230,7 +231,7 @@ As long as there are enough servers in the datacenter to maintain quorum, Consul
 - stop consul service
 - terraform destroy environment
 
-# Appendix 1: Consul Crawl Stage; Registry and Discovery
+# Appendix: Consul Crawl Stage; Registry and Discovery
 
 _Multiple Containers, Single VM...and single Consul Agent_
 
@@ -249,17 +250,22 @@ realistically, this scenario may push the limits of effectiveness of a "single V
 ## NodeJS and MySQL Example
 
 - build a NodeJS and MySQL container, register with Consul Agent container, and perform health checks
-- start with Docker-Compose, then stop an individual container to show Consul health checks in action
+- start with the stack with Docker-Compose, then stop an individual container to show Consul health checks in action
+- work in progress (WIP), use this simple stack to develop more in-depth service checks (beyond Serf and port hello)
 
-[code source](https://dwmkerr.com/learn-docker-by-building-a-microservice/)
+[credit for the Node and MySQL code](https://dwmkerr.com/learn-docker-by-building-a-microservice/)
 
-[Nic Jackson demo reference](https://github.com/hashicorp/da-connect-demo)
+[also, HashiCorp DA, Nic Jackson demo reference](https://github.com/hashicorp/da-connect-demo)
 
 ### NodeJS Container
 
 1. copy from Git
 
+this repo contains all the files and code required for the stack, but each step will show manually creating the files and configurations in the even you'd like to tweak or break the config to further your understanding of the components.
+
 `mkdir ~/docker`
+
+`cd ~/docker`
 
 `wget https://github.com/raygj/consul-content/archive/master.zip`
 
@@ -465,7 +471,7 @@ cat << EOF > ~/docker/node-docker-microservice/consul/users-service.json
 		"name": "user-service-api",
 		"tags": ["nodejs"],
 		"port": 8123,
-		"checks": [{
+		"check": {
 				"id": "users-service-200",
 				"service_id": "user-service-api",
 				"name": "HTTP API on port 8123",
@@ -473,17 +479,11 @@ cat << EOF > ~/docker/node-docker-microservice/consul/users-service.json
 				"tls_skip_verify": true,
 				"interval": "10s",
 				"method": "GET"
-			},
-			{
-				"id": "memory-usage-test",
-			    "name": "check memory usage",
-			    "args": ["sh", "/app", "./healthcheck.sh"],
-			    "interval": "10s"
 			}
-		]
 	}
 }
 EOF
+
 
 ```
 
@@ -509,20 +509,13 @@ cat << EOF > ~/docker/node-docker-microservice/consul/users-service-mysql.json
 		"name": "user-service-mysql",
 		"tags": ["mysql"],
 		"port": 3306,
-		"checks": [{
+		"check": {
 				"id": "mysql-3306-OK",
 				"service_id": "user-service-mysql",
 				"name": "tcp 3306 active",
 				"tcp": "db:3306",
 				"interval": "10s"
-			},
-			{
-				"id": "mysql-query",
-				"name": "execute SQL query",
-				"args": ["sh", "/app", "./sqlquerycheck.sh"],
-				"interval": "10s"
 			}
-		]
 	}
 }
 EOF
@@ -625,7 +618,6 @@ ca9154ab3110        node-docker-microservice_consul-agent    "docker-entrypoint.
 
 **dc1 > Services**
 
-
 ### troubleshooting
 
 - view logs of container `mysql-srv-1`
@@ -682,11 +674,13 @@ additional work that can be done to obfuscate secrets or provide automation duri
 
 Next Steps:
 
-- configure a more in-depth Consul health check for Node and MySQL services
-- deploy another Docker VM to host a few more instances of the Node container and a Consul Agent sidecar
-- register all instances with Consul datacenter
-- deploy a Nginx service to front-end the Node microservices with a dynamic configuration driven by Consul Template
+- configure a more in-depth Consul health check for Node and MySQL services, see [Appendix]()
+- deploy another Docker VM to host a few more instances of the Node container and a Consul Agent sidecar, see [Consul Docker Walk Stage]()
+	- deploy a Nginx service to front-end the Node microservices with a dynamic configuration driven by Consul Template
 	- fail instances or whole VMs to demo dynamic configuration of Nginx to keep the service healthy and available
+- use Consul Connect to secure communication between Node and MySQL containers see [Consul Docker Run Stage]()
+	- deploy across two or more VMs
+	- add Service Gateway to the mix to support traffic on-prem and in a cloud provider
 
 # Appendix: Consul Agent Health Checks
 

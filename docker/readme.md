@@ -26,6 +26,10 @@ Terraform code with bootstrap script to prepare CentOS and install single-node C
 
 **Appendices**
 
+# Appendix: Consul Agent Health Checks
+# Appendix: Docker Compose Bootstrap
+# Appendix: TCPdump Container
+
 1. Docker-Compose, multi-container walkthrough
 
 # Step 1: Deploy CentOS7 host
@@ -33,7 +37,7 @@ Terraform code with bootstrap script to prepare CentOS and install single-node C
 - use TF code and check syslog for any errors before continuing
 - TF code calls a basic `bootsraph.sh` script that will install packages
 	- add/remove packages in this script prior to running TF apply
-- TF will also copy `consul-install.sh` script for installing Consul and `counting-service.zip` that contains the _counting-service_ binary
+- TF will also copy `consul-install.sh` script for installing Consul
 
 # Step 2: Install Consul
 
@@ -41,6 +45,7 @@ Terraform code with bootstrap script to prepare CentOS and install single-node C
 - open script, set desired Consul version on line 17
 - assuming a single Consul server was deployed, execute the script with something like `sudo ./tmp/consul-install.sh < IP address of VM >`
 	- the script will grab the IP address and use it to populate Consul config files
+	- if you are deploying a 3-node Consul cluster, execute the script on each VM, the first IP address should be the VM you are running the script from, followed by the other two IP address, e.g., `sudo ./tmp/consul-install.sh < IP address of VM > < IP address of 2nd VM > < IP address of 3rd VM >`
 	- there are occasions when the script completes, but throws erros re: firewalld configuration...if so, just rerun the script
 - check syslog for any errors before continuing
 - start Consul `sudo systemctl start consul`
@@ -673,57 +678,15 @@ ca9154ab3110        node-docker-microservice_consul-agent    "docker-entrypoint.
 
 additional work that can be done to obfuscate secrets or provide automation during container builds, see [this reference blog post](https://medium.com/better-programming/using-variables-in-docker-compose-265a604c2006)
 
-# Next Steps
+# Where to go from here?
+
+Next Steps:
 
 - configure a more in-depth Consul health check for Node and MySQL services
 - deploy another Docker VM to host a few more instances of the Node container and a Consul Agent sidecar
 - register all instances with Consul datacenter
 - deploy a Nginx service to front-end the Node microservices with a dynamic configuration driven by Consul Template
 	- fail instances or whole VMs to demo dynamic configuration of Nginx to keep the service healthy and available
-
-# Appendix: Docker Compose Bootstrap
-
-Docker Compose and dependencies are installed within the `bootstrap.sh` script, run as a part of the TF boostrap process; the source is here in the [/terrafrom/templates directory](https://github.com/raygj/consul-content/tree/master/docker/terraform/templates)
-
-[install](https://docs.docker.com/compose/install/) guide
-
-- dependencies:
-
-`sudo yum install -y python-dev py-pip libffi-dev openssl-dev gcc libc-dev make`
-
-- Docker Compose
-
-`sudo curl -L "https://github.com/docker/compose/releases/download/1.24.1/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose`
-
-`sudo chmod +x /usr/local/bin/docker-compose`
-
-- test Docker Compose
-
-```
-sudo `which docker-compose` --version
-```
-
-# Appendix: TCPdump Container
-
-- create directory for tcpdump container files
-
-`mkdir ~/docker/tcpdump`
-
-- define container and run
-
-```
-
-cd ~/docker/tcpdump
-
-sudo docker build -t tcpdump - <<EOF 
-FROM ubuntu 
-RUN apt-get install -y tcpdump 
-CMD tcpdump -i eth0 
-EOF
-
-sudo docker run -it --net=container:< container name > tcpdump tcpdump port < target port to capture >
-
-```
 
 # Appendix: Consul Agent Health Checks
 
@@ -765,6 +728,10 @@ request.end();
 EOF
 
 ```
+
+### additionally, look into adding a health check API endpoint that Consul could call directly
+
+[reference](https://cloud.ibm.com/docs/node?topic=nodejs-node-healthcheck)
 
 ## WIP: Memory Utlization Script
 
@@ -821,6 +788,46 @@ EOF
 
 
 
+# Appendix: Docker Compose Bootstrap
 
+Docker Compose and dependencies are installed within the `bootstrap.sh` script, run as a part of the TF boostrap process; the source is here in the [/terrafrom/templates directory](https://github.com/raygj/consul-content/tree/master/docker/terraform/templates)
 
+[install](https://docs.docker.com/compose/install/) guide
 
+- dependencies:
+
+`sudo yum install -y python-dev py-pip libffi-dev openssl-dev gcc libc-dev make`
+
+- Docker Compose
+
+`sudo curl -L "https://github.com/docker/compose/releases/download/1.24.1/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose`
+
+`sudo chmod +x /usr/local/bin/docker-compose`
+
+- test Docker Compose
+
+```
+sudo `which docker-compose` --version
+```
+
+# Appendix: TCPdump Container
+
+- create directory for tcpdump container files
+
+`mkdir ~/docker/tcpdump`
+
+- define container and run
+
+```
+
+cd ~/docker/tcpdump
+
+sudo docker build -t tcpdump - <<EOF 
+FROM ubuntu 
+RUN apt-get install -y tcpdump 
+CMD tcpdump -i eth0 
+EOF
+
+sudo docker run -it --net=container:< container name > tcpdump tcpdump port < target port to capture >
+
+```

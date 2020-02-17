@@ -8,8 +8,8 @@ apt-get install -y unzip dnsmasq nano net-tools nmap socat
 # https://github.com/raygj/vault-content/tree/master/use-cases/vault-agent-kubernetes#install-minikube
 
 cd /usr/local/bin
-sudo curl -LO https://storage.googleapis.com/minikube/releases/latest/minikube_1.4.0.deb \
-&& sudo dpkg -i minikube_1.4.0.deb
+sudo curl -LO https://storage.googleapis.com/minikube/releases/latest/minikube_1.7.2.deb \
+&& sudo dpkg -i minikube_1.7.2.deb
 
 egrep -q 'vmx|svm' /proc/cpuinfo && echo yes || echo no
 

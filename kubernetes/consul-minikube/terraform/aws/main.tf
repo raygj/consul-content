@@ -80,26 +80,26 @@ resource "aws_instance" "test-ec2-instance" {
     TTL   = var.ttl
   }
 
-  provisioner "file" {
-    source      = "/files/*"
-    destination = "/tmp"
-  }
+  # provisioner "file" {
+  #   source      = "/files/*"
+  #   destination = "/tmp"
+  # }
 
-  provisioner "remote-exec" {
-    inline = [
-      "chmod +x /tmp/bootstrap.sh",
-      "sudo ./tmp/bootstrap.sh",
-    ]
-  }
+  # provisioner "remote-exec" {
+  #   inline = [
+  #     "chmod +x /tmp/bootstrap.sh",
+  #     "sudo ./tmp/bootstrap.sh",
+  #   ]
+  # }
 
-  connection {
-    type        = "ssh"
-    private_key = var.private_key
-    # private_key = "~/.ssh/id_rsa"
-    #   private_key = "${file("$var.private_key")}"
-    user    = "ubuntu"
-    host    = "aws_instance.test-ec2-instance.public_ip"
-    timeout = "30s"
-  }
+  # connection {
+  #   type        = "ssh"
+  #   private_key = var.private_key
+  #   # private_key = "~/.ssh/id_rsa"
+  #   #   private_key = "${file("$var.private_key")}"
+  #   user    = "ubuntu"
+  #   host    = "aws_instance.test-ec2-instance.public_ip"
+  #   timeout = "30s"
+  # }
 }
 

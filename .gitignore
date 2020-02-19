@@ -1,3 +1,5 @@
 
 .DS_Store
 pcf/consul-pcf-notes.md
+kubernetes/consul-minikube/terraform/aws/.terraform/plugins/darwin_amd64/lock.json
+kubernetes/consul-minikube/terraform/aws/.terraform/plugins/darwin_amd64/terraform-provider-aws_v2.49.0_x4

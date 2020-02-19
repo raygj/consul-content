@@ -28,7 +28,7 @@ resource "esxi_guest" "homelab" {
   provisioner "remote-exec" {
     inline = [
       "chmod +x /tmp/bootstrap.sh",
-      "./tmp/hashistack_setup.sh",
+      "sudo ./tmp/bootstrap.sh",
     ]
   }
 

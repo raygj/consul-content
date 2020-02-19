@@ -7,8 +7,6 @@ intro to Consul and Kubernetes using Minikube on an Ubuntu VM, next step is Cons
 - Deploy Consul on Kubernetes Minikube using official Helm chart
 - Sandbox environment with services using discovery and Connect Service Mesh
 
-[official learn.hashicorp guide](https://learn.hashicorp.com/consul/getting-started-k8s/minikube)
-
 ## Background Consul on Kubernetes
 
 - server agents run as a **StatefulSet** using persistent volume claims to store server state
@@ -19,6 +17,12 @@ intro to Consul and Kubernetes using Minikube on an Ubuntu VM, next step is Cons
 	- service registration should be handled via the catalog syncing feature with services rather than pods
 - by default, the client exposes the Consul HTTP API on 8500 bound to the host port
 	- this has security implications, in production Consul ACLs and TLS should be used to mitigate unauthorized access to the Consul data center
+
+## References
+
+[Official learn.hashicorp Guide](https://learn.hashicorp.com/consul/getting-started-k8s/minikube)
+
+[Consul Helm Repo](https://github.com/hashicorp/consul-helm)
 
 ## Terraform Code and Bootstrap
 
@@ -77,7 +81,7 @@ https://github.com/raygj/consul-content/tree/master/kubernetes/consul-minikube/t
 	- connectInject will enable Consul Connect
 	- global:datacenter is the name of the Consul data center
 	- server:bootstrapExpect is the number of servers in the Consul cluster (set this to the number of server nodes you plan to deploy...**note** you must deploy this number of nodes or Consul will not form consensus and start)
-- yaml [linter](http://www.yamllint.com) to save headaches
+- yaml [linter](https://codebeautify.org/yaml-validator) to save headaches
 
 ```
 
@@ -160,7 +164,118 @@ EOF
 
 ## Deploy services with Kubernetes
 
-because the Connect injector was enabled in your `...-values.yaml` file, all the services using Connect will automatically be registered in the Consul catalog
+- because the Connect injector was enabled in your `...-values.yaml` file, all the services using Connect will automatically be registered in the Consul catalog
+- deploy two services (front and back end)
 
-https://learn.hashicorp.com/consul/kubernetes/minikube#deploy-services-with-kubernetes
+### create pod definition files
 
+- Counting Service
+
+
+```
+
+cat << EOF > ~/counting.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: counting
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: counting
+  annotations:
+    "consul.hashicorp.com/connect-inject": "true"
+spec:
+  containers:
+  - name: counting
+    image: hashicorp/counting-service:0.0.2
+    ports:
+    - containerPort: 9001
+      name: http
+  serviceAccountName: counting
+EOF
+
+```
+
+- Dashboard Service
+
+```
+
+cat << EOF > ~/dashboard.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: dashboard
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: dashboard
+  labels:
+    app: 'dashboard'
+  annotations:
+    "consul.hashicorp.com/connect-inject": "true"
+    "consul.hashicorp.com/connect-service-upstreams": "counting:9001"
+spec:
+  containers:
+  - name: dashboard
+    image: hashicorp/dashboard-service:0.0.4
+    ports:
+    - containerPort: 9002
+      name: http
+    env:
+    - name: COUNTING_SERVICE_URL
+      value: "http://localhost:9001"
+  serviceAccountName: dashboard
+---
+apiVersion: 'v1'
+kind: 'Service'
+metadata:
+  name: 'dashboard-service-load-balancer'
+  namespace: 'default'
+  labels:
+    app: 'dashboard'
+spec:
+  ports:
+    - protocol: 'TCP'
+      port: 80
+      targetPort: 9002
+  selector:
+    app: 'dashboard'
+  type: 'LoadBalancer'
+  loadBalancerIP: ''
+EOF
+
+```
+
+### deploy services
+
+- counting service
+
+`sudo kubectl create -f counting.yaml`
+
+- dashboard service
+
+`sudo kubectl create -f dashboard.yaml`
+
+### verify services
+
+- from CLI
+
+`sudo kubectl get pods`
+
+```
+
+NAME                                                              READY   STATUS    RESTARTS   AGE
+counting                                                          3/3     Running   0          66s
+dashboard                                                         3/3     Running   0          7s
+hashicorp-consul-bv4ct                                            1/1     Running   0          19h
+hashicorp-consul-connect-injector-webhook-deployment-84589mlsll   1/1     Running   0          19h
+hashicorp-consul-server-0                                         1/1     Running   0          19h
+
+```
+
+- from Consul UI
+
+![image](/images/consul_minikube_dashboard00.png)

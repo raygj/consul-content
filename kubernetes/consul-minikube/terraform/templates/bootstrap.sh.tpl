@@ -1,37 +1,39 @@
 #!/bin/bash
+# sudo chmod +x bootstrap.sh
+# run with sudo
 
-sudo snap remove docker
+snap remove docker
 apt-get update
-apt-get install -y unzip dnsmasq nano net-tools nmap socat
+apt-get install -y unzip dnsmasq nano net-tools nmap socat docker.io
 
 # minikube installation
 # https://github.com/raygj/vault-content/tree/master/use-cases/vault-agent-kubernetes#install-minikube
 
 cd /usr/local/bin
-sudo curl -LO https://storage.googleapis.com/minikube/releases/latest/minikube_1.7.2.deb \
-&& sudo dpkg -i minikube_1.7.2.deb
+curl -LO https://storage.googleapis.com/minikube/releases/latest/minikube_1.7.2.deb \
+ && sudo dpkg -i minikube_1.7.2.deb
 
 egrep -q 'vmx|svm' /proc/cpuinfo && echo yes || echo no
 
-sudo minikube config set vm-driver none
+minikube config set vm-driver none
 
-sudo minikube start
+minikube start
 
 # install kubectl
 
 cd /usr/local/bin
 
-sudo curl -LO https://storage.googleapis.com/kubernetes-release/release/` \
+curl -LO https://storage.googleapis.com/kubernetes-release/release/` \
 curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt`/bin/linux/amd64/kubectl
 
-sudo chmod +x ./kubectl
+chmod +x ./kubectl
 
 # install helm
 
-cd /temp
+cd /tmp
 
 curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3
 
-sudo chmod 700 get_helm.sh
+chmod 700 get_helm.sh
 
-sudo ./get_helm.sh
+./get_helm.sh

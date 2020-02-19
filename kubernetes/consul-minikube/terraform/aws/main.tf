@@ -72,7 +72,7 @@ resource "aws_instance" "test-ec2-instance" {
   ami             = var.ami_id
   instance_type   = var.instance_type
   key_name        = var.key_name
-  vpc_security_group_ids = [aws_security_group.ingress-all-test.name]
+  vpc_security_group_ids = [aws_security_group.ingress-all-test.id]
 
   tags = {
     Name  = "${var.owner}-demo_env"

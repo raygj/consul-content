@@ -279,3 +279,95 @@ hashicorp-consul-server-0                                         1/1     Runnin
 - from Consul UI
 
 ![image](/images/consul_minikube_dashboard00.png)
+
+### access Counting Dashboard
+
+- find target port of dashboard-service-load-balancer
+
+`sudo minikube service list`
+
+- assuming dashboard and counting services are connected you will see the "count" incrementing
+- if there is a break in communication the dashboard will report a negative value
+	- this behavior will be used for t 
+
+## Consul Intentions
+
+- using the service tag names you can enforce directional intentions on the traffic flow between endpoints
+- [Intentions](https://www.consul.io/docs/connect/intentions.html) rely on Consul's "service access graph" which is a matrix of who,what,where, and associated allow/deny policy
+	- intentions replace traditional IP-based firewall rules
+	- rules are enforced on service regardless of what node they may be running on and are maintained by Consul via the Raft consensus protocol for fast consistency
+	- active connections are _not_ killed/reset
+- intentions can be set via the API, CLI, or UI
+
+### CLI
+
+- exec into Consul node and set Intentions
+
+`sudo kubectl exec -it hashicorp-consul-server-0 /bin/sh`
+
+`consul intention create -deny dashboard counting`
+
+- go to dashboard UI and verify a negative value, meaning the connection has been broken between the dashboard and counting service
+- reset the intention
+
+`consul intention delete dashboard counting`
+
+- leave exec session
+
+`exit`
+
+### UI
+
+1. Intentions > `Create`
+2. Select source service `dashboard`
+3. Select destination service `counting`
+4. Select `deny`
+5. Click `Save`
+
+- configuration
+
+![image](/images/consul_intentions_ui00.png)
+
+- after saving the intention, note the Precedence value which is how Consul determines which intention to force if there is overlap; see the [docs for more info](https://www.consul.io/docs/connect/intentions.html#precedence-and-match-order)
+
+![image](/images/consul_intentions_ui01.png)
+
+- guidance is offered on least-privilege access of Consul ACLs required to set intentions and service behaviors around read access by default versus have an intention hard-coded into the service definition so read access is not required
+
+## Upgrade or Modify Consul via Helm
+
+- create a new custom value file with CatalogSync enabled
+	- this will synchronize services between Consul and Kubernetes
+
+```
+
+cat << EOF > ~/helm-consul-values2.yaml
+client: 
+  enabled: true
+connectInject: 
+  enabled: true
+global: 
+  datacenter: minidc
+server: 
+  bootstrapExpect: 1
+  disruptionBudget: 
+    enabled: true
+    maxUnavailable: 0
+  replicas: 1
+ui: 
+  service: 
+    type: NodePort
+syncCatalog:
+  enabled: true
+EOF
+
+```
+
+- use the Helm upgrade command to update Consul with the new values
+
+`sudo helm upgrade hashicorp -f ~/helm-consul-values2.yaml ./consul-helm`
+
+- it will take a moment, but a new pod will be loaded called `hashicorp-consul-sync-catalog-...`
+- from the Services menu of the Consul UI, view the synchronized services
+
+![image](/images/minikube-consul-ui-k8s.png)

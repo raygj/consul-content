@@ -26,7 +26,9 @@ intro to Consul and Kubernetes using Minikube on an Ubuntu VM, next step is Cons
 
 ## Terraform Code and Bootstrap
 
-https://github.com/raygj/consul-content/tree/master/kubernetes/consul-minikube/terraform
+[Terraform on AWS](https://github.com/raygj/consul-content/tree/master/kubernetes/consul-minikube/terraform/aws)
+
+[Terraform on ESXi](https://github.com/raygj/consul-content/tree/master/kubernetes/consul-minikube/terraform/esxi)
 
 - Ubuntu VM
 - Terraform to deploy VM and bootstrap Ubuntu
@@ -57,18 +59,11 @@ https://github.com/raygj/consul-content/tree/master/kubernetes/consul-minikube/t
 
 ### setup Helm
 
-- clone Helm repo
+- clone latest Helm repo
 
 `git clone https://github.com/hashicorp/consul-helm.git`
 
-- if using Helm 2, you will need to initialize it...if using Helm 3 you are good
-- check version
-
 `sudo helm version`
-
-- if v2, initialize
-
-`sudo helm init`
 
 ### install Consul
 

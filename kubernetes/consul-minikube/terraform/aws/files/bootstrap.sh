@@ -4,14 +4,20 @@
 
 snap remove docker
 apt-get update
-apt-get install -y unzip dnsmasq nano net-tools nmap socat docker.io
+apt-get install -y unzip nano net-tools nmap socat
+
+# docker install on Amazon Ubuntu
+# https://geekylane.com/install-docker-on-aws-ec2-ubuntu-18-04-script-method/
+
+curl -fsSL https://get.docker.com -o get-docker.sh
+sudo sh get-docker.sh
 
 # minikube installation
 # https://github.com/raygj/vault-content/tree/master/use-cases/vault-agent-kubernetes#install-minikube
 
 cd /usr/local/bin
-curl -LO https://storage.googleapis.com/minikube/releases/latest/minikube_1.7.2.deb \
- && sudo dpkg -i minikube_1.7.2.deb
+curl -Lo minikube https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64 \
+  && chmod +x minikube
 
 egrep -q 'vmx|svm' /proc/cpuinfo && echo yes || echo no
 

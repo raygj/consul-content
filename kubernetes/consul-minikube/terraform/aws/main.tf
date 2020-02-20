@@ -53,8 +53,8 @@ resource "aws_security_group" "ingress-all-test" {
       "0.0.0.0/0", // any-any rule to specific IP of your host machine <not the world!>
     ]
 
-    from_port = 22
-    to_port   = 22
+    from_port = 0
+    to_port   = 0
     protocol  = "tcp"
   }
 

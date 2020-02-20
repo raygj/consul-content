@@ -28,7 +28,7 @@ resource "aws_internet_gateway" "test-env-gw" {
   vpc_id = aws_vpc.test-env.id
 }
 
-# subnets
+# route table
 resource "aws_route_table" "route-table-test-env" {
   vpc_id = aws_vpc.test-env.id
 
@@ -69,10 +69,12 @@ resource "aws_security_group" "ingress-all-test" {
 
 # EC server
 resource "aws_instance" "test-ec2-instance" {
-  ami             = var.ami_id
-  instance_type   = var.instance_type
-  key_name        = var.key_name
-  vpc_security_group_ids = [aws_security_group.ingress-all-test.id]
+  ami                         = var.ami_id
+  instance_type               = var.instance_type
+  key_name                    = var.key_name
+  subnet_id                   = aws_subnet.subnet-uno.id
+  vpc_security_group_ids      = [aws_security_group.ingress-all-test.id]
+  associate_public_ip_address = true
 
   tags = {
     Name  = "${var.owner}-demo_env"
@@ -80,26 +82,6 @@ resource "aws_instance" "test-ec2-instance" {
     TTL   = var.ttl
   }
 
-  # provisioner "file" {
-  #   source      = "/files/*"
-  #   destination = "/tmp"
-  # }
-
-  # provisioner "remote-exec" {
-  #   inline = [
-  #     "chmod +x /tmp/bootstrap.sh",
-  #     "sudo ./tmp/bootstrap.sh",
-  #   ]
-  # }
-
-  # connection {
-  #   type        = "ssh"
-  #   private_key = var.private_key
-  #   # private_key = "~/.ssh/id_rsa"
-  #   #   private_key = "${file("$var.private_key")}"
-  #   user    = "ubuntu"
-  #   host    = "aws_instance.test-ec2-instance.public_ip"
-  #   timeout = "30s"
-  # }
+  user_data = "${file("/files/bootstrap.sh")}"
 }
 

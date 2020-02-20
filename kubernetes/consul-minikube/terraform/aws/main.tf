@@ -82,6 +82,11 @@ resource "aws_instance" "test-ec2-instance" {
     TTL   = var.ttl
   }
 
-  user_data = "${file("/files/bootstrap.sh")}"
+  user_data = <<EOF
+    #!/bin/bash -xe
+    sudo snap remove docker
+    sudo apt-get update
+    sudo apt-get install -y unzip dnsmasq nano net-tools nmap socat docker.io
+EOF
 }
 

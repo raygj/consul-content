@@ -50,7 +50,7 @@ resource "aws_security_group" "ingress-all-test" {
 
   ingress {
     cidr_blocks = [
-      "100.34.183.112/32",
+      "100.34.183.112/32", // any-any rule to specific IP of your host machine <not the world!>
     ]
 
     from_port = 0
@@ -86,7 +86,7 @@ resource "aws_instance" "test-ec2-instance" {
     #!/bin/bash -xe
     sudo snap remove docker
     sudo apt-get update
-    sudo apt-get install -y unzip dnsmasq nano net-tools nmap socat docker.io
+    sudo apt-get install -y unzip nano net-tools nmap socat
 EOF
 }
 

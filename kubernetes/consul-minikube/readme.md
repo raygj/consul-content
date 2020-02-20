@@ -133,6 +133,7 @@ EOF
 
 - visit the UI by hitting the URL listed in the target port for `consul-ui`
 	- depending on your environment their may be a firewall, security group, or other connectivity adjustment required
+	- on AWS you will need to change the URL to match your public IP address
 
 #### exec into Consul pod
 
@@ -283,7 +284,10 @@ hashicorp-consul-server-0                                         1/1     Runnin
 
 - assuming dashboard and counting services are connected you will see the "count" incrementing
 - if there is a break in communication the dashboard will report a negative value
-	- this behavior will be used for t 
+	- this behavior will be used for test intentions in the next section
+- visit the UI by hitting the URL listed in the target port for `dashboard-service-load-balancer`
+	- depending on your environment their may be a firewall, security group, or other connectivity adjustment required
+	- on AWS you will need to change the URL to match your public IP address
 
 ## Consul Intentions
 

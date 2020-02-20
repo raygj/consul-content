@@ -297,6 +297,7 @@ hashicorp-consul-server-0                                         1/1     Runnin
 	- rules are enforced on service regardless of what node they may be running on and are maintained by Consul via the Raft consensus protocol for fast consistency
 	- active connections are _not_ killed/reset
 - intentions can be set via the API, CLI, or UI
+	- at scale, using the Consul provider for Terraform will enable intentions (and other Consul artifacts) to be managed as code with a tight VCS-driven workflow
 
 ### CLI
 

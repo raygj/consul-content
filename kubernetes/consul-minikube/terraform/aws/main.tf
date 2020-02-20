@@ -90,3 +90,6 @@ resource "aws_instance" "test-ec2-instance" {
 EOF
 }
 
+output "instance_ips" {
+  value = ["${aws_instance.test-ec2-instance.*.public_ip}"]
+}

@@ -375,8 +375,10 @@ EOF
 # Appendix
 
 - ssh port-forwarding for Consul UI and Dashboard
-- Consul UI
+- Consul UI where xxxxx is the port assigned by Kubernetes
 
 `ssh -i /path/to/pem -R xxxxx:localhost:8500`
+
+- Dashboard UI yyyyy is the port assigned by Kubernetes
 
 `ssh -i /path/to/pem -R yyyyy:localhost:8080`

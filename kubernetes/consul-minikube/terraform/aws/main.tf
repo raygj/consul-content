@@ -50,7 +50,7 @@ resource "aws_security_group" "ingress-all-test" {
 
   ingress {
     cidr_blocks = [
-      "0.0.0.0/0", // any-any rule to specific IP of your host machine <not the world!>
+      "100.34.183.112/32", // any-any rule to specific IP of your host machine <not the world!>
     ]
 
     from_port = 0
@@ -81,14 +81,16 @@ resource "aws_instance" "test-ec2-instance" {
     owner = var.owner
     TTL   = var.ttl
   }
+  provisioner "local-exec" {
+      command = <<EOF
+  cd ~/
+  curl https://github.com/raygj/consul-content/blob/master/kubernetes/consul-minikube/terraform/aws/files/bootstrap.sh
+  chmod +x ~/bootstrap.sh
+  sudo ~/.bootstrap.sh
+  EOF
+    }
+  }
 
-  user_data = <<EOF
-    #!/bin/bash -xe
-    sudo snap remove docker
-    sudo apt-get update
-    sudo apt-get install -y unzip nano net-tools nmap socat
-EOF
-}
 
 output "instance_ips" {
   value = ["${aws_instance.test-ec2-instance.*.public_ip}"]

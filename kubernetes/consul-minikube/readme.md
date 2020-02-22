@@ -81,20 +81,20 @@ intro to Consul and Kubernetes using Minikube on an Ubuntu VM, next step is Cons
 ```
 
 cat << EOF > ~/helm-consul-values.yaml
-client: 
+client:
   enabled: true
-connectInject: 
+connectInject:
   enabled: true
-global: 
+global:
   datacenter: minidc
-server: 
+server:
   bootstrapExpect: 1
-  disruptionBudget: 
+  disruptionBudget:
     enabled: true
     maxUnavailable: 0
   replicas: 1
-ui: 
-  service: 
+ui:
+  service:
     type: NodePort
 EOF
 
@@ -342,20 +342,20 @@ hashicorp-consul-server-0                                         1/1     Runnin
 ```
 
 cat << EOF > ~/helm-consul-values2.yaml
-client: 
+client:
   enabled: true
-connectInject: 
+connectInject:
   enabled: true
-global: 
+global:
   datacenter: minidc
-server: 
+server:
   bootstrapExpect: 1
-  disruptionBudget: 
+  disruptionBudget:
     enabled: true
     maxUnavailable: 0
   replicas: 1
-ui: 
-  service: 
+ui:
+  service:
     type: NodePort
 syncCatalog:
   enabled: true
@@ -371,3 +371,12 @@ EOF
 - from the Services menu of the Consul UI, view the synchronized services
 
 ![image](/images/minikube-consul-ui-k8s.png)
+
+# Appendix
+
+- ssh port-forwarding for Consul UI and Dashboard
+- Consul UI
+
+`ssh -i /path/to/pem -R xxxxx:localhost:8500`
+
+`ssh -i /path/to/pem -R yyyyy:localhost:8080`

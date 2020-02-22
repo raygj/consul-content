@@ -82,14 +82,12 @@ resource "aws_instance" "test-ec2-instance" {
     TTL   = var.ttl
   }
   provisioner "local-exec" {
-      command = <<EOF
-  cd ~/
+    command = <<EOF
   curl https://github.com/raygj/consul-content/blob/master/kubernetes/consul-minikube/terraform/aws/files/bootstrap.sh
   chmod +x ~/bootstrap.sh
-  sudo ~/.bootstrap.sh
   EOF
-    }
   }
+}
 
 
 output "instance_ips" {

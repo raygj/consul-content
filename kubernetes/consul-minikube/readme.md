@@ -379,6 +379,6 @@ EOF
 
 `ssh -i /path/to/pem -R xxxxx:localhost:8500`
 
-- Dashboard UI yyyyy is the port assigned by Kubernetes
+- Dashboard UI where yyyyy is the port assigned by Kubernetes
 
 `ssh -i /path/to/pem -R yyyyy:localhost:8080`

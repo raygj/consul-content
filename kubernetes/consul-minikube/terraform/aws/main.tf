@@ -81,7 +81,7 @@ resource "aws_instance" "test-ec2-instance" {
     owner = var.owner
     TTL   = var.ttl
   }
-  provisioner "local-exec" {
+  provisioner "remote-exec" {
     command = <<EOF
   cd ~/
   curl -O https://github.com/raygj/consul-content/blob/master/kubernetes/consul-minikube/terraform/aws/files/bootstrap.sh

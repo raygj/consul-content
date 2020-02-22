@@ -1,5 +1,6 @@
 variable "guest_name" {
   description = "full name of VM"
+  default     = "sandbox"
 }
 
 variable "disk_store" {

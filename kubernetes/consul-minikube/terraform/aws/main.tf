@@ -86,7 +86,7 @@ resource "aws_instance" "test-ec2-instance" {
     type        = "ssh"
     user        = var.ssh_user
     private_key = var.private_key
-    host        = "aws_instance.test-ec2-instance.public_ip"
+    host        = "${aws_instance.test-ec2-instance.public_ip}"
     timeout     = "30s"
   }
   provisioner "remote-exec" {

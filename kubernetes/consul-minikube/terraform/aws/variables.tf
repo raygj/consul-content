@@ -35,7 +35,11 @@ variable "key_name" {
   default     = "jray"
 }
 
-#variable "private_key" {
-#  description = "literal local path to SSH key that Terraform remote-exec should use"
-#  default     = "~/.ssh/id_rsa"
-#}
+variable "private_key" {
+  description = "full private key stored as secure variable in TFC/E"
+}
+
+variable "ssh_user" {
+  description = "EC2 user - will depend on OS"
+  default     = "ubuntu"
+}

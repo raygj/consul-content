@@ -81,14 +81,20 @@ resource "aws_instance" "test-ec2-instance" {
     owner = var.owner
     TTL   = var.ttl
   }
+
+  connection {
+    type        = "ssh"
+    user        = var.ssh_user
+    private_key = var.private_key
+    host        = "aws_instance.test-ec2-instance.*.public_ip"
+  }
   provisioner "remote-exec" {
     inline = [
-  "curl -O https://github.com/raygj/consul-content/blob/master/kubernetes/consul-minikube/terraform/aws/files/bootstrap.sh",
-  "chmod +x ~/bootstrap.sh"
-  ]
+      "curl -O https://github.com/raygj/consul-content/blob/master/kubernetes/consul-minikube/terraform/aws/files/bootstrap.sh",
+      "chmod +x ~/bootstrap.sh"
+    ]
   }
 }
-
 
 output "instance_ips" {
   value = ["${aws_instance.test-ec2-instance.*.public_ip}"]

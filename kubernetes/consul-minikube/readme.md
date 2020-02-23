@@ -374,11 +374,16 @@ EOF
 
 # Appendix
 
-- ssh port-forwarding for Consul UI and Dashboard
+## ssh port-forwarding for Consul UI and Dashboard
+
+gather the services and EIP being used in your environment and plug in the values below
+
+`more mini_services.txt`
+
 - Consul UI where xxxxx is the port assigned by Kubernetes
 
-`ssh -i /path/to/pem -R xxxxx:localhost:8500`
+`ssh -L 8500:localhost:xxxxx ubuntu@<elastic_IP_address> -i <path/to/your.pem>`
 
 - Dashboard UI where yyyyy is the port assigned by Kubernetes
 
-`ssh -i /path/to/pem -R yyyyy:localhost:8080`
+`ssh -L 8501:localhost:yyyyy ubuntu@<elastic_IP_address> -i ubuntu@<elastic_IP_address> -i <path/to/your.pem>`

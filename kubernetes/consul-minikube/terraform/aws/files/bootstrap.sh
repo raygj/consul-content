@@ -44,6 +44,12 @@ chmod 700 get_helm.sh
 
 ./get_helm.sh
 
+# clone latest Consul Helm repo
+
+cd ~/
+
+git clone https://github.com/hashicorp/consul-helm.git
+
 # create Consul custom helm values
 
 cat << EOF > ~/helm-consul-values.yaml
@@ -64,7 +70,16 @@ ui:
     type: NodePort
 EOF
 
-# create pod definition files
+# execute Consul Helm
+
+cd ~/
+
+helm install -f helm-consul-values.yaml hashicorp ./consul-helm
+
+sleep 15
+minikube service list > ~/active_services.txt
+
+# create Counting pod definition file
 
 cat << EOF > ~/counting.yaml
 apiVersion: v1
@@ -87,6 +102,12 @@ spec:
       name: http
   serviceAccountName: counting
 EOF
+
+# deploy Counting Pod
+
+kubectl create -f counting.yaml
+
+# create Dashboard pod definition file
 
 cat << EOF > ~/dashboard.yaml
 apiVersion: v1
@@ -133,7 +154,17 @@ spec:
   loadBalancerIP: ''
 EOF
 
-# updated Consul cusom helm values
+# deploy Dashboard Pod
+
+kubectl create -f dashboard.yaml
+
+# verify active pods
+
+sleep 15
+kubectl get pods > active_pods.txt
+
+# write updated Consul custom values for service sync, if desired
+# https://github.com/raygj/consul-content/tree/master/kubernetes/consul-minikube#upgrade-or-modify-consul-via-helm
 
 cat << EOF > ~/helm-consul-values2.yaml
 client:

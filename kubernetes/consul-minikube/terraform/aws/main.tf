@@ -91,8 +91,10 @@ resource "aws_instance" "test-ec2-instance" {
   }
   provisioner "remote-exec" {
     inline = [
-      "curl -O https://github.com/raygj/consul-content/blob/master/kubernetes/consul-minikube/terraform/aws/files/bootstrap.sh",
-      "chmod +x ~/bootstrap.sh"
+      "git clone https://github.com/raygj/consul-content",
+      "cp consul-content/kubernetes/consul-minikube/terraform/aws/files/bootstrap.sh ~/",
+      "chmod +x ~/bootstrap.sh",
+      "sudo ./bootstrap.sh"
     ]
   }
 }

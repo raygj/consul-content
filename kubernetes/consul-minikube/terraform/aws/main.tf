@@ -97,6 +97,6 @@ resource "aws_instance" "test-ec2-instance" {
   }
 }
 
-output "elastic IP address" {
+output "elastic_IP_address" {
   value = ["${aws_eip.ip-test-env.aws_instance.test-ec2-instance.id}"]
 }

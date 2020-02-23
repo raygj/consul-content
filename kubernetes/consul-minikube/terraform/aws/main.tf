@@ -67,7 +67,7 @@ resource "aws_security_group" "ingress-all-test" {
   }
 }
 
-# EC server
+# EC2 server
 resource "aws_instance" "test-ec2-instance" {
   ami                         = var.ami_id
   instance_type               = var.instance_type
@@ -97,6 +97,6 @@ resource "aws_instance" "test-ec2-instance" {
   }
 }
 
-output "instance_ips" {
-  value = ["${aws_instance.test-ec2-instance.*.public_ip}"]
+output "elastic IP address" {
+  value = ["${aws_eip.ip-test-env.aws_instance.test-ec2-instance.id}"]
 }

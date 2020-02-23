@@ -156,6 +156,7 @@ EOF
 
 # deploy Dashboard Pod
 
+sleep 30
 kubectl create -f dashboard.yaml
 
 # verify active pods

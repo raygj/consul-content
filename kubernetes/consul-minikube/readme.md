@@ -35,6 +35,10 @@ intro to Consul and Kubernetes using Minikube on an Ubuntu VM, next step is Cons
 - adapt for your target cloud provider
 - Walkthrough with Minikube details [here](https://github.com/raygj/vault-content/tree/master/use-cases/vault-agent-kubernetes#install-minikube)
 
+### bootstrap.sh details
+
+Terraform code will build VPC (and required network resources) and deploy a single EC2 instance, then execute the `bootstrap.sh` script which will execute Step 1 - 4 so Consul, Counting, and Dashboard services will be deployed.
+
 ## Steps
 
 1. deploy and bootstrap Ubuntu VM
@@ -135,7 +139,7 @@ EOF
 	- depending on your environment their may be a firewall, security group, or other connectivity adjustment required
 	- on AWS you will need to change the URL to match your public IP address
 
-#### exec into Consul pod
+## Step 3 exec into Consul pod
 
 - get pod names
 
@@ -158,7 +162,7 @@ EOF
 
 `exit`
 
-## Deploy services with Kubernetes
+## Step 4 Deploy services with Kubernetes
 
 - because the Connect injector was enabled in your `...-values.yaml` file, all the services using Connect will automatically be registered in the Consul catalog
 - deploy two services (front and back end)
@@ -372,13 +376,19 @@ EOF
 
 ![image](/images/minikube-consul-ui-k8s.png)
 
+## Step 5
+
+`terraform destroy -auto-approve`
+
+TFC workspace > Settings > Destruction and Deletion > Queue Destroy Plan
+
 # Appendix
 
 ## ssh port-forwarding for Consul UI and Dashboard
 
 gather the services and EIP being used in your environment and plug in the values below
 
-`more mini_services.txt`
+`more ~/active_services.txt`
 
 - Consul UI where xxxxx is the port assigned by Kubernetes
 

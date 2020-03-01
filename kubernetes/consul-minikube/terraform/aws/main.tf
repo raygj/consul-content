@@ -1,5 +1,7 @@
 # Terraform 0.12 compliant
-# connection
+terraform {
+  required_version = "< 0.12"
+
 provider "aws" {
   region = var.aws_region
 }

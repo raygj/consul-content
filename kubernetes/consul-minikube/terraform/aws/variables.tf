@@ -16,7 +16,7 @@ variable "owner" {
 }
 
 variable "ttl" {
-  description = "ttl in hours for reaper bot, -1 is infinte"
+  description = "ttl in hours for reaper bot, -1 is infinite"
   default     = "12"
 }
 

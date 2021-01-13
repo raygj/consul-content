@@ -11,18 +11,18 @@ variable "vpc_cidr" {
 }
 
 variable "owner" {
-  description = "human name"
+  description = "hashicorp SE email handle"
   default     = "jray"
 }
 
 variable "ttl" {
-  description = "ttl in hours for reaper bot, -1 is infinite"
+  description = "ttl in hours for reaper bot, -1 is infinite and unjustified ;-)"
   default     = "12"
 }
 
 variable "instance_type" {
   description = "EC2 machine size"
-  default     = "t2.medium" // 2 vCPU and 4G RAM
+  default     = "t2.large" // 2 vCPU and 8G RAM
 }
 
 variable "ami_id" {
@@ -42,4 +42,19 @@ variable "private_key" {
 variable "ssh_user" {
   description = "EC2 user - will depend on OS"
   default     = "ubuntu"
+}
+
+variable "purpose" {
+  description = "justification for resource"
+  default     = "POV sandbox"
+}
+
+variable "se-region" {
+  description = "segment or region of SE provisioning resources"
+  default     = "G1"
+}
+
+variable "tf" {
+  description = "true or false TF was used to provision ;-)"
+  default     = "true"
 }

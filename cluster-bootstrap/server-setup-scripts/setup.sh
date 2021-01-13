@@ -1,7 +1,7 @@
 #!/bin/sh
 # This is a setup script meant to be used with the Vault POV Workshop
 # https://github.com/TheHob/vault-pov-training
-# 
+#
 # Once you have stood up your three Vault instances, run the script on each
 # machine with your three IP addresses as script arguments. Put the IP address
 # of the local machine *first* in the list.
@@ -19,7 +19,7 @@
 yum install -y nano unzip open-vm-tools net-tools nmap
 
 CLUSTER_COUNT=$#
-CONSUL_VERSION="1.6.1"
+CONSUL_VERSION="1.8.0+ent"
 
 MYIP=$1
 MACHINE1=$2
@@ -107,7 +107,7 @@ else
   echo "Please provide either 1 or 3 IP addresses (single node or 3 node cluster)"
   exit 1
 fi
-  
+
 
 
 # Set up the Consul service script
@@ -211,9 +211,9 @@ cat << EOF > /etc/firewalld/services/consul.xml
   <description>TCP connectivity required for HashiCorp Consul cluster communication.</description>
   <port protocol="tcp" port="8300"/>
   <port protocol="tcp" port="8301"/>
-  <port protocol="udp" port="8301"/>  
+  <port protocol="udp" port="8301"/>
   <port protocol="tcp" port="8302"/>
-  <port protocol="udp" port="8302"/>  
+  <port protocol="udp" port="8302"/>
   <port protocol="tcp" port="8500"/>
   <port protocol="tcp" port="8600"/>
   <port protocol="udp" port="8600"/>

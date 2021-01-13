@@ -1,7 +1,7 @@
 # Terraform 0.12 compliant
 terraform {
-  required_version = "< 0.12"
-
+  required_version = "> 0.12"
+}
 provider "aws" {
   region = var.aws_region
 }
@@ -79,9 +79,12 @@ resource "aws_instance" "test-ec2-instance" {
   associate_public_ip_address = true
 
   tags = {
-    Name  = "${var.owner}-demo_env"
-    owner = var.owner
-    TTL   = var.ttl
+    name      = "${var.owner}-demo_env"
+    owner     = "${var.owner}"
+    se-region = "${var.se-region}"
+    purpose   = "${var.purpose}"
+    ttl       = "${var.ttl}"
+    terraform = "${var.tf}"
   }
 
   connection {
@@ -99,8 +102,4 @@ resource "aws_instance" "test-ec2-instance" {
       "sudo ./bootstrap.sh"
     ]
   }
-}
-
-output "elastic_IP_address" {
-  value = ["${aws_eip.ip-test-env.public_ip}"]
 }

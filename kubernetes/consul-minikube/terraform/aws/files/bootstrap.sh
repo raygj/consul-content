@@ -4,7 +4,7 @@
 
 snap remove docker
 apt-get update
-apt-get install -y unzip nano net-tools nmap socat
+apt-get install -y unzip nano net-tools nmap socat conntrack
 
 # docker install on Amazon Ubuntu
 # https://geekylane.com/install-docker-on-aws-ec2-ubuntu-18-04-script-method/
